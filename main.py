@@ -2,7 +2,7 @@
 
 # Stuff to get the window open.
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout
 from PyQt5.QtGui import QIcon
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot
@@ -11,6 +11,7 @@ from PyQt5.QtCore import pyqtSlot
 import matplotlib as mpl
 import numpy as np
 from matplotlib.figure import Figure
+import h5py
 
 # and here http://www.boxcontrol.net/embedding-matplotlib-plot-on-pyqt5-gui.html
 
@@ -70,6 +71,7 @@ class MyDynamicMplCanvas(MyMplCanvas):
 
         self.axes.plot([0, 1, 2, 3], l, 'r')
         self.draw()
+        FigureCanvas.updateGeometry(self)
 
 class App(QWidget):
  
@@ -85,15 +87,31 @@ class App(QWidget):
     def initUI(self):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
+        # Widgets are movable.
         self.main_widget = QWidget(self)
-        l = QVBoxLayout(self.main_widget)
+        self.layout = QVBoxLayout(self.main_widget)
+        #layout = QGraphicsAnchorLayout()
         sc = MyStaticMplCanvas(self.main_widget, width=5, height=4, dpi=100)
         dc = MyDynamicMplCanvas(self.main_widget, width=5, height=4, dpi=100)
-        l.addWidget(sc)
-        button = self.newButton(self, "Button!", "Nothing", (100,70), self.button_test, click_args=None)
+        self.layout.addWidget(sc)
+        self.main_widget.move(250,0)
+        #button = self.newButton(self, "Button!", "Nothing", (100,70), self.button_test, click_args=None)
         testDict = {'0': ['0', '1'], '1': {'A': ['2'], 'B': ['3', '4']}}
-        self.tree = self.newTree(self, testDict, pos=(100, 75))
+        kinetics = h5py.File('direct.h5', 'r')
+        self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height/2), col=3, clickable=True, editable=False)
+        self.mplTree = self.newTree(self, testDict, pos=(0,self.height/2), size=(250,self.height/2), col=1)
+        #print(dir(layout))
+        #layout.addChildWidget(self.dataTree)
         self.show()
+
+    def resizeEvent(self, event):
+        # size().height/width should do it.
+        self.resizeAll(event.size().height, event.size().width)
+        pass
+
+    def resizeAll(self, height, width):
+        self.dataTree.tree.resize(self.dataTree.tree.width(), height()/2)
+        self.mplTree.tree.setGeometry(0, height()/2, 250, height()/2)
 
     def keyPressEvent(self, e):
         # This is our key press handler.  It's mostly just a stub right now.
@@ -102,22 +120,32 @@ class App(QWidget):
 
     def wheelEvent(self, e):
         # This is what happens when we scroll.
-        print(self.tree.data)
+        #print(self.tree.data)
+        pass
 
+    # Data loading; for now, just do hdf5
+
+    # For displaying data in a tree.
     class newTree():
-        def __init__(self, parent, data, pos, col=1, rows=True, editable=True):
+        def __init__(self, parent, data, pos, col=1, rows=True, size=None, editable=True, clickable=False):
             self.tree = QTreeWidget(parent)
             self.tree.setColumnCount(col)
+            print(dir(self.tree))
             #A = QTreeWidgetItem(self.tree, ["A"])
             self.data = data
+            if size:
+                self.tree.setGeometry(pos[0], pos[1], size[0], size[1])
             self.editable = editable
-            self.tree.move(pos[0], pos[1])
+            #self.tree.move(pos[0], pos[1])
             # How should we handle this?  Like dictionaries, let's assume.
             self.rows = rows
             self.treeItemKeyDict = {}
             self.updateTree()
-            print(self.treeItemKeyDict)
-            self.tree.itemChanged.connect(self.onItemChanged)
+            print(dir(self.tree))
+            if editable:
+                self.tree.itemChanged.connect(self.onItemChanged)
+            if clickable:
+                self.tree.clicked.connect(self.onClicked)
 
         def updateData(data):
             self.data = data
@@ -137,6 +165,30 @@ class App(QWidget):
                 self.treeItemKeyDict[str(keyTree)] = key_list + [str(key)]
                 if type(val) == dict:
                     self.handleDict(val, keyTree, key_list + [str(key)])
+                elif type(val) == h5py._hl.dataset.Dataset:
+                    if len(val.shape) == 1:
+                        # Here, we don't want to display everything in the list.  Just... let it be.
+                        valTree = QTreeWidgetItem(keyTree, [str(val)])
+                        self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
+                        if hasattr(val, 'dtype'):
+                            if len(val.dtype) > 1:
+                                print(len(val.dtype))
+                                for iv in range(0, len(val.dtype)):
+                                    dtypeTree = QTreeWidgetItem(valTree, [str(val.dtype.names[iv])])
+                                    self.treeItemKeyDict[str(dtypeTree)] = key_list + [str(key)] + [str(val.dtype.names[iv])]
+                    elif len(val.shape) > 1:
+                        for n in range(1, len(val.shape)):
+                            for i in range(0, n):
+                                for j in range(0, n):
+                                    if i != j:
+                                        # Iterate through and add each dimension that isn't time to the list.
+                                        valTree = QTreeWidgetItem(keyTree, [str(key), str(i), str(j)])
+                                        self.treeItemKeyDict[str(valTree)] = key_list + [str(key), str(i), str(j)]
+                                        if hasattr(val, 'dtype'):
+                                            if len(val.dtype) > 1:
+                                                for iv in range(0, len(val.dtype)):
+                                                    dtypeTree = QTreeWidgetItem(valTree, [str(val.dtype.names[iv])])
+                                                    self.treeItemKeyDict[str(dtypeTree)] = key_list + [str(key)] + [str(val.dtype.names[iv])] + [str(i), str(j)]
                 else:
                     # We want this to be like rows, not columns
                     if self.rows:
@@ -172,6 +224,33 @@ class App(QWidget):
             print(test.data(0,0), self.data)
             #print(test.data(0,0))
 
+        def onClicked(self, test):
+            #print(self.tree.selectedItems())
+            #print(self.treeItemKeyDict)
+            # This is the thing which will actually return our dataset.
+            #print(self.treeItemKeyDict[str(self.tree.selectedItems()[0])])
+            location = self.treeItemKeyDict[str(self.tree.selectedItems()[0])]
+            # One thing we don't know is precisely how to format this, but that's okay.
+            # We could just change this later.
+            # We should probably store how we formatted it with the reverse dictionary, but.
+            print(location)
+            if len(location) == 1:
+                print(self.data[location[0]][:])
+            elif len(location) == 2:
+                try:
+                    print(self.data[location[0]][:,int(location[1])])
+                except:
+                    print(self.data[location[0]][location[1]][:])
+            elif len(location) == 3:
+                try:
+                    print(self.data[location[0]][:,int(location[1]), int(location[2])])
+                except:
+                    print(self.data[location[0]][location[1]][:,int(location[2])])
+            elif len(location) == 4:
+                try:
+                    print(self.data[location[0]][:,int(location[1]), int(location[2]), int(location[3])])
+                except:
+                    print(self.data[location[0]][location[1]][:,int(location[2]), int(location[3])])
 
 
     class newButton():
