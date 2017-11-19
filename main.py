@@ -92,7 +92,7 @@ class App(QWidget):
         l.addWidget(sc)
         button = self.newButton(self, "Button!", "Nothing", (100,70), self.button_test, click_args=None)
         testDict = {'0': ['0', '1'], '1': {'A': '2', 'B': ['3', '4']}}
-        tree = self.newTree(self, testDict, pos=(100, 75))
+        self.tree = self.newTree(self, testDict, pos=(100, 75))
         self.show()
 
     def keyPressEvent(self, e):
@@ -102,18 +102,22 @@ class App(QWidget):
 
     def wheelEvent(self, e):
         # This is what happens when we scroll.
-        print("Stop scrolling.")
+        print(self.tree.data)
 
     class newTree():
-        def __init__(self, parent, data, pos, col=1, rows=True):
+        def __init__(self, parent, data, pos, col=1, rows=True, editable=True):
             self.tree = QTreeWidget(parent)
+            self.tree.itemChanged.connect(self.onItemChanged)
             self.tree.setColumnCount(col)
             #A = QTreeWidgetItem(self.tree, ["A"])
             self.data = data
+            self.editable = editable
             self.tree.move(pos[0], pos[1])
             # How should we handle this?  Like dictionaries, let's assume.
             self.rows = rows
+            self.treeItemKeyDict = {}
             self.updateTree()
+            print(self.treeItemKeyDict)
 
         def updateData(data):
             self.data = data
@@ -124,19 +128,34 @@ class App(QWidget):
             if type(self.data) == dict:
                 self.handleDict(self.data, self.tree)
 
-        def handleDict(self, dict_data, tree):
-            print(type(tree))
+        def handleDict(self, dict_data, tree, key_list=[]):
+            # We can actually have numerous structures, here.
+            # Why not keep track of it, for now?
+            # We want to do a reverse lookup
             for key, val in dict_data.items():
                 keyTree = QTreeWidgetItem(tree, [str(key)])
-            if type(val) == dict:
-                self.handleDict(val, keyTree)
-            else:
-                # We want this to be like rows, not columns
-                if self.rows:
-                    for v in val:
-                        valTree = QTreeWidgetItem(keyTree, [str(v)])
+                self.treeItemKeyDict[str(keyTree)] = key_list + [str(key)]
+                if type(val) == dict:
+                    self.handleDict(val, keyTree, key_list + [str(key)])
                 else:
-                    valTree = QTreeWidgetItem(keyTree, val)
+                    # We want this to be like rows, not columns
+                    if self.rows:
+                        for v in val:
+                            valTree = QTreeWidgetItem(keyTree, [str(v)])
+                            #key_list.append(val)
+                            self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
+                            if self.editable:
+                                valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
+                    else:
+                        valTree = QTreeWidgetItem(keyTree, val)
+                        #key_list.append(val)
+                        self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
+                        if self.editable:
+                            valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
+
+        def onItemChanged(self, test):
+            print("Changed!")
+            print(self.treeItemKeyDict[str(test)])
 
 
 
