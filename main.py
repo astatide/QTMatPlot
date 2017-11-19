@@ -2,7 +2,7 @@
 
 # Stuff to get the window open.
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea
 from PyQt5.QtGui import QIcon
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot
@@ -45,14 +45,8 @@ class MyMplCanvas(FigureCanvas):
     def compute_initial_figure(self):
         pass
 
-
-class MyStaticMplCanvas(MyMplCanvas):
-    """Simple canvas with a sine plot."""
-    def compute_initial_figure(self):
-        t = np.arange(0.0, 3.0, 0.01)
-        s = np.sin(2*np.pi*t)
-        self.axes.plot(t, s)
-
+    def updateSize(self, height, width):
+        pass
 
 class MyDynamicMplCanvas(MyMplCanvas):
     """A canvas that updates itself every second with a new plot."""
@@ -90,11 +84,17 @@ class App(QWidget):
         # Widgets are movable.
         self.main_widget = QWidget(self)
         self.layout = QVBoxLayout(self.main_widget)
+        #scroll = QScrollArea()
+        #scroll.setWidgetResizable(True)
+        #scroll.setFixedHeight(400)
+        #self.layout.addWidget(scroll)
         #layout = QGraphicsAnchorLayout()
-        sc = MyStaticMplCanvas(self.main_widget, width=5, height=4, dpi=100)
-        dc = MyDynamicMplCanvas(self.main_widget, width=5, height=4, dpi=100)
-        self.layout.addWidget(sc)
+        #self.layout.addWidget(scroll)
+        #dc = MyDynamicMplCanvas(self.main_widget, width=10, height=8, dpi=100)
+        dc = MyDynamicMplCanvas(self.main_widget, width=10, height=8, dpi=100)
+        self.layout.addWidget(dc)
         self.main_widget.move(250,0)
+        self.main_widget.setLayout(self.layout)
         #button = self.newButton(self, "Button!", "Nothing", (100,70), self.button_test, click_args=None)
         testDict = {'0': ['0', '1'], '1': {'A': ['2'], 'B': ['3', '4']}}
         kinetics = h5py.File('direct.h5', 'r')
@@ -112,6 +112,7 @@ class App(QWidget):
     def resizeAll(self, height, width):
         self.dataTree.tree.resize(self.dataTree.tree.width(), height()/2)
         self.mplTree.tree.setGeometry(0, height()/2, 250, height()/2)
+        self.main_widget.setGeometry(250, 0, width()-250, height())
 
     def keyPressEvent(self, e):
         # This is our key press handler.  It's mostly just a stub right now.
