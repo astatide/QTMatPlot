@@ -91,7 +91,7 @@ class App(QWidget):
         dc = MyDynamicMplCanvas(self.main_widget, width=5, height=4, dpi=100)
         l.addWidget(sc)
         button = self.newButton(self, "Button!", "Nothing", (100,70), self.button_test, click_args=None)
-        testDict = {'0': ['0', '1'], '1': {'A': '2', 'B': ['3', '4']}}
+        testDict = {'0': ['0', '1'], '1': {'A': ['2'], 'B': ['3', '4']}}
         self.tree = self.newTree(self, testDict, pos=(100, 75))
         self.show()
 
@@ -107,7 +107,6 @@ class App(QWidget):
     class newTree():
         def __init__(self, parent, data, pos, col=1, rows=True, editable=True):
             self.tree = QTreeWidget(parent)
-            self.tree.itemChanged.connect(self.onItemChanged)
             self.tree.setColumnCount(col)
             #A = QTreeWidgetItem(self.tree, ["A"])
             self.data = data
@@ -118,6 +117,7 @@ class App(QWidget):
             self.treeItemKeyDict = {}
             self.updateTree()
             print(self.treeItemKeyDict)
+            self.tree.itemChanged.connect(self.onItemChanged)
 
         def updateData(data):
             self.data = data
@@ -149,21 +149,28 @@ class App(QWidget):
                     else:
                         valTree = QTreeWidgetItem(keyTree, val)
                         #key_list.append(val)
-                        self.treeItemKeyDict[str(valTree)] = key_list
+                        self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
                         if self.editable:
                             valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
 
         def onItemChanged(self, test):
             # This works.
-            print("Changed!")
-            print(self.treeItemKeyDict[str(test)])
+            #print("Changed!")
+            #print(self.treeItemKeyDict[str(test)])
             # Find the key in the data.
             #print(dir(test))
             val = self.data
+            # Recurse through the dictionary
             for key in self.treeItemKeyDict[str(test)]:
-                val = val[key]
+                if type(val) == dict:
+                    val = val.get(key)
             print(val)
-            #print(test.data)
+            # Because we return the child widget, this is fine.
+            print(val, key)
+            # You can't have non list data, so enforce list type.
+            val[key] = test.data(0,0)
+            print(test.data(0,0), self.data)
+            #print(test.data(0,0))
 
 
 
