@@ -140,22 +140,30 @@ class App(QWidget):
                 else:
                     # We want this to be like rows, not columns
                     if self.rows:
-                        for v in val:
+                        for iv, v in enumerate(val):
                             valTree = QTreeWidgetItem(keyTree, [str(v)])
                             #key_list.append(val)
-                            self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
+                            self.treeItemKeyDict[str(valTree)] = key_list + [str(key)] + [iv]
                             if self.editable:
                                 valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
                     else:
                         valTree = QTreeWidgetItem(keyTree, val)
                         #key_list.append(val)
-                        self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
+                        self.treeItemKeyDict[str(valTree)] = key_list
                         if self.editable:
                             valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
 
         def onItemChanged(self, test):
+            # This works.
             print("Changed!")
             print(self.treeItemKeyDict[str(test)])
+            # Find the key in the data.
+            #print(dir(test))
+            val = self.data
+            for key in self.treeItemKeyDict[str(test)]:
+                val = val[key]
+            print(val)
+            #print(test.data)
 
 
 
