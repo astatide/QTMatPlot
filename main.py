@@ -2,10 +2,11 @@
 
 # Stuff to get the window open.
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit
-from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit, QMenu, QAction
+from PyQt5.QtGui import QIcon, QCursor
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot
+from PyQt5.Qt import Qt
 
 # Matplotlib stuff
 import matplotlib as mpl
@@ -214,7 +215,7 @@ class MyMplCanvas(FigureCanvas):
         sns.set(font='sans-serif', style='ticks')
         sns.set_palette('deep')
         sns.despine()'''
-        self.fig.tight_layout()
+        #self.fig.tight_layout()
         self.draw()
         FigureCanvas.updateGeometry(self)
 
@@ -274,8 +275,8 @@ class App(QWidget):
         self.save_button = self.newButton(self, "Save", "Saves the Figure", (250,self.height-30), dc.save_figure, click_args=None)
         self.load_button = self.newButton(self, "Load Yaml", "Loads the Config", (250,self.height-30), dc.load_yaml, click_args=None)
         self.text = self.newTextBox(self, size=(0,0), pos=(self.save_button.button.width()+250, self.height-30), init_text="{}".format(kinetics))
-        self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText)
         self.mplTree = self.newTree(self, dc.mpl_dict, pos=(self.width-250,0), size=(250,self.height-30), col=1, function=dc.update_figure, rows=True)
+        self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText, get_figures=self.mplTree.getFigures)
 
         # Try the scroll!
         self.scroll = QScrollArea(self.main_widget)
@@ -331,10 +332,11 @@ class App(QWidget):
 
     # For displaying data in a tree.
     class newTree():
-        def __init__(self, parent, data, pos, col=1, rows=True, size=None, editable=True, clickable=False, function=None):
+        def __init__(self, parent, data, pos, col=1, rows=True, size=None, editable=True, clickable=False, function=None, get_figures=None):
             self.tree = QTreeWidget(parent)
             self.tree.setColumnCount(col)
             self.parent = parent
+            self.get_figures = get_figures
             self.col = col
             self.pos = pos
             self.size = size
@@ -348,11 +350,33 @@ class App(QWidget):
             # How should we handle this?  Like dictionaries, let's assume.
             self.rows = rows
             self.treeItemKeyDict = {}
+            self.figures = None
             self.updateTree()
             if editable:
                 self.tree.itemChanged.connect(self.onItemChanged)
             if clickable:
                 self.tree.clicked.connect(self.onClicked)
+            self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
+            self.tree.customContextMenuRequested.connect(self.contextMenuEvent)
+
+        def contextMenuEvent(self, event):
+            menu = QMenu()
+            e_action = QAction(str(event), self.tree)
+            menu.addAction(e_action)
+            menu.popup(QCursor.pos())
+            print("NEW EVENT")
+            print(event)
+            #print(dir(event))
+            print((event.x(), event.y()))
+            #print(QCursor.pos())
+            #print(self.tree.indexAt(QCursor.pos()))
+            #print(dir(self.tree.indexAt(event)))
+            horizontal = event
+            horizontal.setX(0)
+            print(dir(horizontal))
+            #print(self.tree.indexAt(event).data())
+            print(self.tree.indexAt(horizontal).data())
+            #print(self.tree.indexAt((event.x(), event.y())))
 
         def updateData(data):
             self.data = data
@@ -368,6 +392,9 @@ class App(QWidget):
             if type(self.data) == dict:
                 self.handleDict(self.data, self.tree)
 
+        def getFigures(self):
+            return self.figures
+
         def handleDict(self, dict_data, tree, key_list=[]):
             # We can actually have numerous structures, here.
             # Why not keep track of it, for now?
@@ -375,6 +402,8 @@ class App(QWidget):
             for key, val in dict_data.items():
                 keyTree = QTreeWidgetItem(tree, [str(key)])
                 self.treeItemKeyDict[str(keyTree)] = key_list + [str(key)]
+                if key == 'Figures':
+                    self.figures = keyTree
                 if type(val) == dict:
                     self.handleDict(val, keyTree, key_list + [str(key)])
                 elif type(val) == h5py._hl.dataset.Dataset:
@@ -460,6 +489,9 @@ class App(QWidget):
                 oldkey = self.treeItemKeyDict[str(test)][-1]
             defaults = True
             print(key, oldkey)
+            # TEST code
+            #print("TESTING")
+            #print(dir(self.tree))
             if key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad' or oldkey == 'DSetDefaults' or oldkey == 'FigDefaults':
                 defaults = False
             if self.function:
