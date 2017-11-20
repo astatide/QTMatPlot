@@ -215,7 +215,7 @@ class MyMplCanvas(FigureCanvas):
         sns.set(font='sans-serif', style='ticks')
         sns.set_palette('deep')
         sns.despine()'''
-        #self.fig.tight_layout()
+        self.fig.tight_layout()
         self.draw()
         FigureCanvas.updateGeometry(self)
 
@@ -276,7 +276,7 @@ class App(QWidget):
         self.load_button = self.newButton(self, "Load Yaml", "Loads the Config", (250,self.height-30), dc.load_yaml, click_args=None)
         self.text = self.newTextBox(self, size=(0,0), pos=(self.save_button.button.width()+250, self.height-30), init_text="{}".format(kinetics))
         self.mplTree = self.newTree(self, dc.mpl_dict, pos=(self.width-250,0), size=(250,self.height-30), col=1, function=dc.update_figure, rows=True)
-        self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText, get_figures=self.mplTree.getFigures)
+        self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText, function2=dc.update_figure, get_figures=self.mplTree.getFigures, mpl=dc.mpl_dict)
 
         # Try the scroll!
         self.scroll = QScrollArea(self.main_widget)
@@ -332,7 +332,7 @@ class App(QWidget):
 
     # For displaying data in a tree.
     class newTree():
-        def __init__(self, parent, data, pos, col=1, rows=True, size=None, editable=True, clickable=False, function=None, get_figures=None):
+        def __init__(self, parent, data, pos, col=1, rows=True, size=None, editable=True, clickable=False, function=None, get_figures=None, mpl=None, function2=None):
             self.tree = QTreeWidget(parent)
             self.tree.setColumnCount(col)
             self.parent = parent
@@ -344,7 +344,10 @@ class App(QWidget):
             self.data = data
             if size:
                 self.tree.setGeometry(pos[0], pos[1], size[0], size[1])
+            if mpl:
+                self.mpl = mpl
             self.function = function
+            self.function2 = function2
             self.editable = editable
             #self.tree.move(pos[0], pos[1])
             # How should we handle this?  Like dictionaries, let's assume.
@@ -360,28 +363,39 @@ class App(QWidget):
             self.tree.customContextMenuRequested.connect(self.contextMenuEvent)
 
         def contextMenuEvent(self, event):
-            menu = QMenu()
-            e_action = QAction(str(event), self.tree)
-            menu.addAction(e_action)
-            menu.popup(QCursor.pos())
             print("NEW EVENT")
-            #print(event)
-            #print(dir(event))
-            #print((event.x(), event.y()))
-            #print(QCursor.pos())
-            #print(self.tree.indexAt(QCursor.pos()))
-            #print(dir(self.tree.indexAt(event)))
+            # Just get the horizontal value; we want anything in this row.
             horizontal = event
             horizontal.setX(0)
-            #print(dir(horizontal))
-            #print(self.tree.indexAt(event).data())
-            #print(self.tree.indexAt(horizontal).data())
-            #print(str(self.tree.indexAt(horizontal)))
             index = self.tree.indexAt(horizontal)
             print(self.tree.itemFromIndex(index))
             location = self.treeItemKeyDict[str(self.tree.itemFromIndex(index))]
             print(location)
-            #print(self.tree.indexAt((event.x(), event.y())))
+            # Now we have the actual menu item we need to send to the dictionary.  That's location.
+            # Now, create the menu...
+            self.menu = QMenu()
+            # Add a series of actions.  So far, we just want this simple: subplots, and datasets.  Send em on!
+            for key,val in self.mpl['Figures'].items():
+                print(key,val)
+                for dkey,dval in val['data'].items():
+                    send_action = QAction((str(key) + ":" + str(dkey)), self.tree)
+                    #send_action.triggered.connect(lambda key, dkey, location : self.reassignMpl(key, dkey, location))
+                    onSend = { 'key': key, 'dkey': dkey, 'location': location }
+                    print(key, dkey, location)
+                    send_action.triggered.connect(lambda: self.reassignMpl(key, dkey, location))
+                    self.menu.addAction(send_action)
+            #e_action = QAction(str(event), self.tree)
+            #self.menu.addAction(e_action)
+            self.menu.popup(QCursor.pos())
+
+        def reassignMpl(self, key, dkey, location):
+            #tmp = self.mpl.get(['Figures'][key]['data'][dkey]) 
+            tmp = self.mpl.get(['Figures'])
+            tmp = tmp.get([key])
+            tmp = tmp.get(['data'])
+            tmp = tmp.get([dkey])
+            tmp['loc'] = location
+            self.function2()
 
         def updateData(data):
             self.data = data
