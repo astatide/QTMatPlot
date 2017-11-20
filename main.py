@@ -11,7 +11,17 @@ from PyQt5.QtCore import pyqtSlot
 import matplotlib as mpl
 import numpy as np
 from matplotlib.figure import Figure
+import seaborn as sns
 import h5py
+import ast
+sns.set_style('ticks')
+sns.set_context('paper')
+sns.axes_style({'font.family': ['monospace'],
+                'font.sans-serif': ['monospace']
+                })
+sns.set(font='sans-serif', style='ticks')
+#sns.set_palette('husl')
+sns.set_palette('deep')
 
 # and here http://www.boxcontrol.net/embedding-matplotlib-plot-on-pyqt5-gui.html
 
@@ -25,16 +35,13 @@ def button_test():
 # Now, from that other site...
 class MyMplCanvas(FigureCanvas):
     """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
+    def __init__(self, parent=None, width=7, height=4, dpi=100):
+        self.fig = Figure(figsize=(width, height), dpi=dpi)
         # We want the axes cleared every time plot() is called
-        self.axes.hold(False)
 
-        self.compute_initial_figure()
 
         #
-        FigureCanvas.__init__(self, fig)
+        FigureCanvas.__init__(self, self.fig)
         self.setParent(parent)
 
         FigureCanvas.setSizePolicy(self,
@@ -42,30 +49,37 @@ class MyMplCanvas(FigureCanvas):
                 QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
 
+        self.mpl_dict_lit = '''{
+                                'Rows': 2, 
+                                'Columns': 4
+                               }'''
+        self.mpl_dict = ast.literal_eval(self.mpl_dict_lit)
+        self.compute_initial_figure()
+        self.update_figure()
+        ##timer = QtCore.QTimer(self)
+        ##timer.timeout.connect(self.update_figure)
+        ##timer.start(1000)
+
     def compute_initial_figure(self):
-        pass
+        self.updateFromDict()
+
+    def updateFromDict(self):
+        d = self.mpl_dict
+        self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']))
+        #self.axes.hold(False)
 
     def updateSize(self, height, width):
         pass
 
-class MyDynamicMplCanvas(MyMplCanvas):
-    """A canvas that updates itself every second with a new plot."""
-    def __init__(self, *args, **kwargs):
-        MyMplCanvas.__init__(self, *args, **kwargs)
-        timer = QtCore.QTimer(self)
-        timer.timeout.connect(self.update_figure)
-        timer.start(1000)
-
-    def compute_initial_figure(self):
-        self.axes.plot([0, 1, 2, 3], [1, 2, 0, 4], 'r')
-
     def update_figure(self):
         # Build a list of 4 random integers between 0 and 10 (both inclusive)
+        self.updateFromDict()
         l = [np.random.randint(0, 10) for i in range(4)]
 
-        self.axes.plot([0, 1, 2, 3], l, 'r')
+        #self.axes.plot([0, 1, 2, 3], l, 'r')
         self.draw()
         FigureCanvas.updateGeometry(self)
+
 
 class App(QWidget):
  
@@ -91,7 +105,7 @@ class App(QWidget):
         #layout = QGraphicsAnchorLayout()
         #self.layout.addWidget(scroll)
         #dc = MyDynamicMplCanvas(self.main_widget, width=10, height=8, dpi=100)
-        dc = MyDynamicMplCanvas(self.main_widget, width=10, height=8, dpi=100)
+        dc = MyMplCanvas(self.main_widget, width=10, height=8, dpi=100)
         self.layout.addWidget(dc)
         self.main_widget.move(250,0)
         self.main_widget.setLayout(self.layout)
@@ -99,7 +113,8 @@ class App(QWidget):
         testDict = {'0': ['0', '1'], '1': {'A': ['2'], 'B': ['3', '4']}}
         kinetics = h5py.File('direct.h5', 'r')
         self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height/2), col=3, clickable=True, editable=False)
-        self.mplTree = self.newTree(self, testDict, pos=(0,self.height/2), size=(250,self.height/2), col=1)
+        self.mplTree = self.newTree(self, dc.mpl_dict, pos=(0,self.height/2), size=(250,self.height/2), col=1)
+        button = self.newButton(self, "Update!", "Nothing", (100,70), dc.update_figure, click_args=None)
         #print(dir(layout))
         #layout.addChildWidget(self.dataTree)
         self.show()
@@ -193,10 +208,17 @@ class App(QWidget):
                 else:
                     # We want this to be like rows, not columns
                     if self.rows:
-                        for iv, v in enumerate(val):
-                            valTree = QTreeWidgetItem(keyTree, [str(v)])
+                        if type(val) == list:
+                            for iv, v in enumerate(val):
+                                valTree = QTreeWidgetItem(keyTree, [str(v)])
+                                #key_list.append(val)
+                                self.treeItemKeyDict[str(valTree)] = key_list + [str(key)] + [iv]
+                                if self.editable:
+                                    valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
+                        else:
+                            valTree = QTreeWidgetItem(keyTree, [str(val)])
                             #key_list.append(val)
-                            self.treeItemKeyDict[str(valTree)] = key_list + [str(key)] + [iv]
+                            self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
                             if self.editable:
                                 valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
                     else:
@@ -209,19 +231,25 @@ class App(QWidget):
         def onItemChanged(self, test):
             # This works.
             #print("Changed!")
-            #print(self.treeItemKeyDict[str(test)])
+            print(self.treeItemKeyDict[str(test)])
             # Find the key in the data.
             #print(dir(test))
             val = self.data
+            x = self.data
             # Recurse through the dictionary
             for key in self.treeItemKeyDict[str(test)]:
-                if type(val) == dict:
+                if type(x.get(key)) == dict:
                     val = val.get(key)
+                    x = x.get(key)
             print(val)
             # Because we return the child widget, this is fine.
             print(val, key)
             # You can't have non list data, so enforce list type.
-            val[key] = test.data(0,0)
+            # Well, that won't work for mpl stuff, so.
+            try:
+                val[key] = test.data(0,0)
+            except:
+                val = test.data(0,0)
             print(test.data(0,0), self.data)
             #print(test.data(0,0))
 
