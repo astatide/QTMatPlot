@@ -171,14 +171,12 @@ class MyMplCanvas(FigureCanvas):
         # This should just occur on a rebuild, so if we haven't added anything, don't worry about it.
         for rows in range(0, int(self.mpl_dict['Rows'])):
             for cols in range(0, int(self.mpl_dict['Columns'])):
-                print(defaults)
                 if defaults:
                     # If we haven't changed the defaults, don't upstate the state.
                     if str((rows, cols)) not in self.mpl_dict['Figures']:
                         #self.mpl_dict['Figures'][str((rows,cols))] = ast.literal_eval(self.fig_dict)
                         self.mpl_dict['Figures'][str((rows,cols))] = dict(self.mpl_dict['FigDefaults'])
                 else:
-                    print("Changing!")
                     self.mpl_dict['Figures'][str((rows,cols))] = dict(self.mpl_dict['FigDefaults'])
                 for dset in range(0, int(self.mpl_dict['Datasets'])):
                     if defaults:
@@ -233,7 +231,6 @@ class MyMplCanvas(FigureCanvas):
     def translate_location(self, location):
         data_loc = None
         location = ast.literal_eval(location)
-        print(location, len(location))
         if len(location) == 1:
             data_loc = self.data[location[0]][:]
         elif len(location) == 2:
@@ -247,7 +244,6 @@ class MyMplCanvas(FigureCanvas):
             except:
                 data_loc = self.data[location[0]][location[1]][:,int(location[2])]
         elif len(location) == 4:
-            print(len(location), location)
             try:
                 data_loc = self.data[location[0]][:,int(location[1]), int(location[2]), int(location[3])]
             except:
@@ -387,7 +383,6 @@ class App(QWidget):
                         self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
                         if hasattr(val, 'dtype'):
                             if len(val.dtype) > 1:
-                                print(len(val.dtype))
                                 for iv in range(0, len(val.dtype)):
                                     dtypeTree = QTreeWidgetItem(valTree, [str(val.dtype.names[iv])])
                                     self.treeItemKeyDict[str(dtypeTree)] = key_list + [str(key)] + [str(val.dtype.names[iv])]
@@ -419,7 +414,9 @@ class App(QWidget):
                             if self.editable:
                                 valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
                     else:
-                        valTree = QTreeWidgetItem(keyTree, [str(val)])
+                        del self.treeItemKeyDict[str(keyTree)]
+                        del keyTree
+                        valTree = QTreeWidgetItem(tree, [str(key), str(val)])
                         self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
                         if self.editable:
                             valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
@@ -433,11 +430,19 @@ class App(QWidget):
             val = self.data
             x = self.data
             # Recurse through the dictionary
-            for key in self.treeItemKeyDict[str(test)]:
-                if type(x.get(key)) == dict:
-                    val = val.get(key)
-                    x = x.get(key)
-                    print(key)
+            if self.rows:
+                for key in self.treeItemKeyDict[str(test)]:
+                    if type(x.get(key)) == dict:
+                        val = val.get(key)
+                        x = x.get(key)
+                        print(key)
+            else:
+                print(self.treeItemKeyDict[str(test)])
+                for key in self.treeItemKeyDict[str(test)]:
+                    if type(x.get(key)) == dict:
+                        val = val.get(key)
+                        x = x.get(key)
+                        print(key)
             # Because we return the child widget, this is fine.
             # You can't have non list data, so enforce list type.
             # Well, that won't work for mpl stuff, so.
@@ -446,12 +451,12 @@ class App(QWidget):
             #except:
             #    val = test.data(0,0)
             #print(dir(test))
-            # This means we should add new items from the dictionary appropriately.  Ugh, jesus.
-            # JUST do it for the rows, cols, and dataset.
-            # Oh hacky, hacky, hack
-            print(key)
-            oldkey = self.treeItemKeyDict[str(test)][-2]
-            print(oldkey)
+            # This just lets us see if we're changing a default.  UPDATE THIS ROUTINE IF YOU ADD MORE PARAMETERS.
+            # But generally, they should be nested about 1 deep, so.
+            try:
+                oldkey = self.treeItemKeyDict[str(test)][-2]
+            except:
+                oldkey = None
             defaults = True
             if key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad' or oldkey == 'DSetDefaults' or oldkey == 'FigDefaults':
                 defaults = False
