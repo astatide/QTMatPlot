@@ -365,17 +365,22 @@ class App(QWidget):
             menu.addAction(e_action)
             menu.popup(QCursor.pos())
             print("NEW EVENT")
-            print(event)
+            #print(event)
             #print(dir(event))
-            print((event.x(), event.y()))
+            #print((event.x(), event.y()))
             #print(QCursor.pos())
             #print(self.tree.indexAt(QCursor.pos()))
             #print(dir(self.tree.indexAt(event)))
             horizontal = event
             horizontal.setX(0)
-            print(dir(horizontal))
+            #print(dir(horizontal))
             #print(self.tree.indexAt(event).data())
-            print(self.tree.indexAt(horizontal).data())
+            #print(self.tree.indexAt(horizontal).data())
+            #print(str(self.tree.indexAt(horizontal)))
+            index = self.tree.indexAt(horizontal)
+            print(self.tree.itemFromIndex(index))
+            location = self.treeItemKeyDict[str(self.tree.itemFromIndex(index))]
+            print(location)
             #print(self.tree.indexAt((event.x(), event.y())))
 
         def updateData(data):
@@ -512,6 +517,7 @@ class App(QWidget):
             # This is the thing which will actually return our dataset.
             #print(self.treeItemKeyDict[str(self.tree.selectedItems()[0])])
             location = self.treeItemKeyDict[str(self.tree.selectedItems()[0])]
+            print(str(self.tree.selectedItems()[0]))
             # One thing we don't know is precisely how to format this, but that's okay.
             # We could just change this later.
             # We should probably store how we formatted it with the reverse dictionary, but.
