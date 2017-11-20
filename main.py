@@ -108,14 +108,14 @@ class MyMplCanvas(FigureCanvas):
     def plot(self, pd, index, ax):
         # pd is the plot dictionary
         print(pd)
-        ax.tick_params(axis='both', labelsize=self.mpl_dict['fontsize']['fontsize'], length=self.mpl_dict['fontsize']['ticksize'])
+        ax.tick_params(axis='both', labelsize=float(self.mpl_dict['fontsize']['fontsize']), length=self.mpl_dict['fontsize']['ticksize'])
         sk = dict(pd['data'][str(index)])
         if sk['ylabel'] is not None:
-            ax.set_ylabel(sk['ylabel'], fontsize=self.mpl_dict['fontsize']['titlesize'], fontweight='bold')
+            ax.set_ylabel(sk['ylabel'], fontsize=float(self.mpl_dict['fontsize']['titlesize']), fontweight='bold')
         if sk['xlabel'] is not None:
-            ax.set_xlabel(sk['xlabel'], fontsize=self.mpl_dict['fontsize']['titlesize'], fontweight='bold')
+            ax.set_xlabel(sk['xlabel'], fontsize=float(self.mpl_dict['fontsize']['titlesize']), fontweight='bold')
         if sk['title'] is not None:
-            ax.set_title(sk['title'], fontsize=self.mpl_dict['fontsize']['titlesize'], fontweight='bold')
+            ax.set_title(sk['title'], fontsize=float(self.mpl_dict['fontsize']['titlesize']), fontweight='bold')
         if pd['data'][str(index)]['loc'] != 'None':
             if pd['type'] == 'plot':
                 try:
@@ -125,7 +125,7 @@ class MyMplCanvas(FigureCanvas):
                     del subplot_kwargs['title']
                     del subplot_kwargs['ylabel']
                     if subplot_kwargs['color'] == -1:
-                        subplot_kwargs['color'] = self.mpl_dict['Colors'][index]
+                        subplot_kwargs['color'] = self.mpl_dict['Colors'][str(index)]
                     handle = ax.plot(self.translate_location(pd['data'][str(index)]['loc']), **subplot_kwargs)
                     return handle
                 except Exception as e:
