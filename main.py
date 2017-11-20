@@ -14,6 +14,7 @@ from matplotlib.figure import Figure
 import seaborn as sns
 import h5py
 import ast
+import copy
 sns.set_style('ticks')
 sns.set_context('paper')
 sns.axes_style({'font.family': ['monospace'],
@@ -175,16 +176,16 @@ class MyMplCanvas(FigureCanvas):
                     # If we haven't changed the defaults, don't upstate the state.
                     if str((rows, cols)) not in self.mpl_dict['Figures']:
                         #self.mpl_dict['Figures'][str((rows,cols))] = ast.literal_eval(self.fig_dict)
-                        self.mpl_dict['Figures'][str((rows,cols))] = dict(self.mpl_dict['FigDefaults'])
+                        self.mpl_dict['Figures'][str((rows,cols))] = copy.deepcopy(self.mpl_dict['FigDefaults'])
                 else:
-                    self.mpl_dict['Figures'][str((rows,cols))] = dict(self.mpl_dict['FigDefaults'])
+                    self.mpl_dict['Figures'][str((rows,cols))] = copy.deepcopy(self.mpl_dict['FigDefaults'])
                 for dset in range(0, int(self.mpl_dict['Datasets'])):
                     if defaults:
                         if str(dset) not in self.mpl_dict['Figures'][str((rows,cols))]['data']:
                             #self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = ast.literal_eval(self.dset_dict)
-                            self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = dict(self.mpl_dict['DSetDefaults'])
+                            self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = copy.deepcopy(self.mpl_dict['DSetDefaults'])
                     else:
-                        self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = dict(self.mpl_dict['DSetDefaults'])
+                        self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = copy.deepcopy(self.mpl_dict['DSetDefaults'])
 
                 # Throw in the axes object.
                 #print(self.mpl_dict['Figures'][(rows,cols)])
@@ -456,8 +457,9 @@ class App(QWidget):
             try:
                 oldkey = self.treeItemKeyDict[str(test)][-2]
             except:
-                oldkey = None
+                oldkey = self.treeItemKeyDict[str(test)][-1]
             defaults = True
+            print(key, oldkey)
             if key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad' or oldkey == 'DSetDefaults' or oldkey == 'FigDefaults':
                 defaults = False
             if self.function:
