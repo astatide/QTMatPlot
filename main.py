@@ -37,8 +37,9 @@ def button_test():
 # Now, from that other site...
 class MyMplCanvas(FigureCanvas):
     """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
-    def __init__(self, parent=None, width=7, height=4, dpi=300, num=1, data=None):
+    def __init__(self, parent=None, width=7, height=4, dpi=300, num=1, data=None, notify_func=None):
         self.data = data
+        self.notify_func = notify_func
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         # We want the axes cleared every time plot() is called
 
@@ -57,21 +58,29 @@ class MyMplCanvas(FigureCanvas):
         self.mpl_dict_lit = '''{
                                 'Rows': 2, 
                                 'Columns': 4,
+                                'Datasets': 1,
                                 'dpi': 300,
                                 'figsize': {
                                   'width': 7,
                                   'height': 4,
                                  },
+                                'Colors': {
+                                  0: '#9b59b6',
+                                  1: '#3498db',
+                                  2: '#95a5a6',
+                                  3: '#e74c3c',
+                                  4: '#e34495e',
+                                  5: '#2ecc71'
+                                 },
                                 'Figures': {}
                                }'''
         self.mpl_dict = ast.literal_eval(self.mpl_dict_lit)
         self.fig_dict = '''{
-                            'Datasets': 1,
                             'type': 'plot', 
                             'data': {} 
                             }'''
         self.dset_dict = '''{
-                            'color': 'None',
+                            'color': -1,
                             'alpha': 1, 
                             'loc': 'None'
                             }'''
@@ -90,7 +99,18 @@ class MyMplCanvas(FigureCanvas):
         if pd['data'][str(index)]['loc'] != 'None':
             if pd['type'] == 'plot':
                 print("PLOT IT BABY")
-                ax.plot(self.translate_location(pd['data'][str(index)]['loc']))
+                try:
+                    subplot_kwargs = dict(pd['data'][str(index)])
+                    del subplot_kwargs['loc']
+                    if subplot_kwargs['color'] == -1:
+                        subplot_kwargs['color'] = self.mpl_dict['Colors'][index]
+                    handle = ax.plot(self.translate_location(pd['data'][str(index)]['loc']), **subplot_kwargs)
+                    return handle
+                except Exception as e:
+                    if self.notify_func is not None:
+                        self.notify_func(e)
+                    else:
+                        pass
                 #self.axes
 
     def updateFromDict(self):
@@ -106,12 +126,12 @@ class MyMplCanvas(FigureCanvas):
             for cols in range(0, int(self.mpl_dict['Columns'])):
                 if str((rows, cols)) not in self.mpl_dict['Figures']:
                     self.mpl_dict['Figures'][str((rows,cols))] = ast.literal_eval(self.fig_dict)
-                for dset in range(0, int(self.mpl_dict['Figures'][str((rows,cols))]['Datasets'])):
+                for dset in range(0, int(self.mpl_dict['Datasets'])):
                     if str(dset) not in self.mpl_dict['Figures'][str((rows,cols))]['data']:
                         self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = ast.literal_eval(self.dset_dict)
                 # Throw in the axes object.
                 #print(self.mpl_dict['Figures'][(rows,cols)])
-                for dset in range(0, int(self.mpl_dict['Figures'][str((rows,cols))]['Datasets'])):
+                for dset in range(0, int(self.mpl_dict['Datasets'])):
                     self.plot(self.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols])
 
                 
@@ -134,7 +154,6 @@ class MyMplCanvas(FigureCanvas):
                         'font.sans-serif': ['monospace']
                         })
         sns.set(font='sans-serif', style='ticks')
-        #sns.set_palette('husl')
         sns.set_palette('deep')
         sns.despine()
         self.fig.tight_layout()
@@ -195,7 +214,12 @@ class App(QWidget):
         self.main_widget = QWidget(self)
         self.layout = QVBoxLayout(self.main_widget)
         kinetics = h5py.File('direct.h5', 'r')
-        dc = MyMplCanvas(self.main_widget, width=10, height=8, dpi=100, data=kinetics)
+        dc = MyMplCanvas(self.main_widget, width=10, height=8, dpi=100, data=kinetics, notify_func=self.notify)
+        self.save_button = self.newButton(self, "Save", "Saves the Figure", (250,self.height-30), dc.save_figure, click_args=None)
+        self.load_button = self.newButton(self, "Load Yaml", "Loads the Config", (250,self.height-30), dc.load_yaml, click_args=None)
+        self.text = self.newTextBox(self, size=(0,0), pos=(self.save_button.button.width()+250, self.height-30), init_text="{}".format(kinetics))
+        self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText)
+        self.mplTree = self.newTree(self, dc.mpl_dict, pos=(self.width-250,0), size=(250,self.height-30), col=1, function=dc.update_figure, rows=True)
 
         # Try the scroll!
         self.scroll = QScrollArea(self.main_widget)
@@ -216,15 +240,13 @@ class App(QWidget):
         self.main_widget.setLayout(self.layout)
         #button = self.newButton(self, "Button!", "Nothing", (100,70), self.button_test, click_args=None)
         testDict = {'0': ['0', '1'], '1': {'A': ['2'], 'B': ['3', '4']}}
-        self.save_button = self.newButton(self, "Save", "Saves the Figure", (250,self.height-30), dc.save_figure, click_args=None)
-        self.load_button = self.newButton(self, "Load Yaml", "Loads the Config", (250,self.height-30), dc.load_yaml, click_args=None)
-        self.text = self.newTextBox(self, size=(0,0), pos=(self.save_button.button.width()+250, self.height-30), init_text="{}".format(kinetics))
-        self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText)
-        self.mplTree = self.newTree(self, dc.mpl_dict, pos=(self.width-250,0), size=(250,self.height-30), col=1, function=dc.update_figure, rows=True)
         #def __init__(self, parent, size, pos, init_text=""):
         #print(dir(layout))
         #layout.addChildWidget(self.dataTree)
         self.show()
+
+    def notify(self, text):
+        self.text.showText(str(text))
 
     def resizeEvent(self, event):
         # size().height/width should do it.
@@ -368,11 +390,14 @@ class App(QWidget):
             if self.function:
                 self.function()
             # This means we should add new items from the dictionary appropriately.  Ugh, jesus.
+            # JUST do it for the rows, cols, and dataset.
             # Oh hacky, hacky, hack
-            #self.tree.itemChanged.disconnect()
-            #self.tree.clear()
-            #self.updateTree()
-            #self.tree.itemChanged.connect(self.onItemChanged)
+            print(key)
+            if key == 'Rows' or key == 'Columns' or key == 'Datasets':
+                self.tree.itemChanged.disconnect()
+                self.tree.clear()
+                self.updateTree()
+                self.tree.itemChanged.connect(self.onItemChanged)
             # We also need to rebuild our tree, unfortunately.
             # Although this loops forever, so I'm missing something.
             # I'm not sure why it doesn't properly... update the whole thing?
