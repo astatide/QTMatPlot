@@ -35,7 +35,15 @@ def button_test():
 # Now, from that other site...
 class MyMplCanvas(FigureCanvas):
     """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
-    def __init__(self, parent=None, width=7, height=4, dpi=100):
+    def __init__(self, parent=None, width=7, height=4, dpi=300, num=1):
+        sns.set_style('ticks')
+        sns.set_context('paper')
+        sns.axes_style({'font.family': ['monospace'],
+                        'font.sans-serif': ['monospace']
+                        })
+        sns.set(font='sans-serif', style='ticks')
+        #sns.set_palette('husl')
+        sns.set_palette('deep')
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         # We want the axes cleared every time plot() is called
 
@@ -51,7 +59,12 @@ class MyMplCanvas(FigureCanvas):
 
         self.mpl_dict_lit = '''{
                                 'Rows': 2, 
-                                'Columns': 4
+                                'Columns': 4,
+                                'dpi': 300,
+                                'figsize': {
+                                  'width': 7,
+                                  'height': 4,
+                                 }
                                }'''
         self.mpl_dict = ast.literal_eval(self.mpl_dict_lit)
         self.compute_initial_figure()
@@ -67,7 +80,9 @@ class MyMplCanvas(FigureCanvas):
         d = self.mpl_dict
         self.fig.clear()
         self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']))
-        #self.axes.
+        self.fig.set_size_inches(float(d['figsize']['width']), float(d['figsize']['height']))
+        self.fig.set_dpi(int(d['dpi']))
+
 
     def updateSize(self, height, width):
         pass
@@ -99,13 +114,6 @@ class App(QWidget):
         # Widgets are movable.
         self.main_widget = QWidget(self)
         self.layout = QVBoxLayout(self.main_widget)
-        #scroll = QScrollArea()
-        #scroll.setWidgetResizable(True)
-        #scroll.setFixedHeight(400)
-        #self.layout.addWidget(scroll)
-        #layout = QGraphicsAnchorLayout()
-        #self.layout.addWidget(scroll)
-        #dc = MyDynamicMplCanvas(self.main_widget, width=10, height=8, dpi=100)
         dc = MyMplCanvas(self.main_widget, width=10, height=8, dpi=100)
         self.layout.addWidget(dc)
         self.main_widget.move(250,0)
