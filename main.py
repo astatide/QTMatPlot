@@ -35,7 +35,7 @@ def button_test():
 # Now, from that other site...
 class MyMplCanvas(FigureCanvas):
     """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
-    def __init__(self, parent=None, width=7, height=4, dpi=300, num=1):
+    def __init__(self, parent=None, width=7, height=4, dpi=300, num=1, data=None):
         sns.set_style('ticks')
         sns.set_context('paper')
         sns.axes_style({'font.family': ['monospace'],
@@ -75,19 +75,12 @@ class MyMplCanvas(FigureCanvas):
         ##timer.timeout.connect(self.update_figure)
         ##timer.start(1000)
 
-    def scrolling(self, event):
-        print("Scrolling!")
-        val = self.scroll.verticalScrollBar().value()
-        if event.button =="down":
-            self.scroll.verticalScrollBar().setValue(val+100)
-        else:
-            self.scroll.verticalScrollBar().setValue(val-100)
-
     def compute_initial_figure(self):
         self.updateFromDict()
 
     def updateFromDict(self):
         d = self.mpl_dict
+        # Clears the figure before we plot more.
         self.fig.clear()
         self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']))
         self.fig.set_size_inches(float(d['figsize']['width']), float(d['figsize']['height']))
@@ -105,6 +98,9 @@ class MyMplCanvas(FigureCanvas):
         #self.axes.plot([0, 1, 2, 3], l, 'r')
         self.draw()
         FigureCanvas.updateGeometry(self)
+
+    def save_figure(self):
+        self.fig.savefig("test.pdf")
 
 
 class App(QWidget):
@@ -124,14 +120,13 @@ class App(QWidget):
         # Widgets are movable.
         self.main_widget = QWidget(self)
         self.layout = QVBoxLayout(self.main_widget)
-        dc = MyMplCanvas(self.main_widget, width=10, height=8, dpi=100)
+        kinetics = h5py.File('direct.h5', 'r')
+        dc = MyMplCanvas(self.main_widget, width=10, height=8, dpi=100, data=kinetics)
 
         # Try the scroll!
         self.scroll = QScrollArea(self.main_widget)
-        #self.scroll.setMinimumWidth=(5000)
-        self.scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        self.scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        #self.scroll.setWidgetResizable(True)
+        #self.scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        #self.scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.scroll.setWidgetResizable(False)
         scrollContent = QWidget(self.scroll)
 
@@ -146,10 +141,9 @@ class App(QWidget):
         self.main_widget.setLayout(self.layout)
         #button = self.newButton(self, "Button!", "Nothing", (100,70), self.button_test, click_args=None)
         testDict = {'0': ['0', '1'], '1': {'A': ['2'], 'B': ['3', '4']}}
-        kinetics = h5py.File('direct.h5', 'r')
         self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height/2), col=3, clickable=True, editable=False)
         self.mplTree = self.newTree(self, dc.mpl_dict, pos=(0,self.height/2), size=(250,self.height/2), col=1, function=dc.update_figure)
-        button = self.newButton(self, "Update!", "Nothing", (100,70), dc.update_figure, click_args=None)
+        self.save_button = self.newButton(self, "Save", "Saves the Figure", (250,self.height-30), dc.save_figure, click_args=None)
         #print(dir(layout))
         #layout.addChildWidget(self.dataTree)
         self.show()
@@ -162,7 +156,8 @@ class App(QWidget):
     def resizeAll(self, height, width):
         self.dataTree.tree.resize(self.dataTree.tree.width(), height()/2)
         self.mplTree.tree.setGeometry(0, height()/2, 250, height()/2)
-        self.main_widget.setGeometry(250, 0, width()-250, height())
+        self.main_widget.setGeometry(250, 0, width()-250, (height()-25))
+        self.save_button.button.move(250,height()-30)
 
     def keyPressEvent(self, e):
         # This is our key press handler.  It's mostly just a stub right now.
