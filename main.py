@@ -23,6 +23,8 @@ sns.set(font='sans-serif', style='ticks')
 #sns.set_palette('husl')
 sns.set_palette('deep')
 
+import yaml
+
 # and here http://www.boxcontrol.net/embedding-matplotlib-plot-on-pyqt5-gui.html
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -107,7 +109,6 @@ class MyMplCanvas(FigureCanvas):
                 for dset in range(0, int(self.mpl_dict['Figures'][str((rows,cols))]['Datasets'])):
                     if str(dset) not in self.mpl_dict['Figures'][str((rows,cols))]['data']:
                         self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = ast.literal_eval(self.dset_dict)
-                print(self.mpl_dict)
                 # Throw in the axes object.
                 #print(self.mpl_dict['Figures'][(rows,cols)])
                 for dset in range(0, int(self.mpl_dict['Figures'][str((rows,cols))]['Datasets'])):
@@ -142,6 +143,14 @@ class MyMplCanvas(FigureCanvas):
 
     def save_figure(self):
         self.fig.savefig("test.pdf")
+        with open('test.yml', 'w') as outfile:
+            yaml.dump(self.mpl_dict, outfile, default_flow_style=False)
+
+    def load_yaml(self):
+        test = yaml.load(open('test.yml', 'r'))
+        if test != None:
+            self.mpl_dict = test
+            self.update_figure()
 
     def translate_location(self, location):
         data_loc = None
@@ -203,13 +212,15 @@ class App(QWidget):
 
         #self.layout.addWidget(dc)
         self.main_widget.move(250,0)
+        self.main_widget.setGeometry(250, 0, self.width-500, (self.height-25))
         self.main_widget.setLayout(self.layout)
         #button = self.newButton(self, "Button!", "Nothing", (100,70), self.button_test, click_args=None)
         testDict = {'0': ['0', '1'], '1': {'A': ['2'], 'B': ['3', '4']}}
         self.save_button = self.newButton(self, "Save", "Saves the Figure", (250,self.height-30), dc.save_figure, click_args=None)
+        self.load_button = self.newButton(self, "Load Yaml", "Loads the Config", (250,self.height-30), dc.load_yaml, click_args=None)
         self.text = self.newTextBox(self, size=(0,0), pos=(self.save_button.button.width()+250, self.height-30), init_text="{}".format(kinetics))
-        self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height/2), col=3, clickable=True, editable=False, function=self.text.showText)
-        self.mplTree = self.newTree(self, dc.mpl_dict, pos=(0,self.height/2), size=(250,self.height/2), col=1, function=dc.update_figure)
+        self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText)
+        self.mplTree = self.newTree(self, dc.mpl_dict, pos=(self.width-250,0), size=(250,self.height-30), col=1, function=dc.update_figure, rows=True)
         #def __init__(self, parent, size, pos, init_text=""):
         #print(dir(layout))
         #layout.addChildWidget(self.dataTree)
@@ -221,11 +232,12 @@ class App(QWidget):
         pass
 
     def resizeAll(self, height, width):
-        self.dataTree.tree.resize(self.dataTree.tree.width(), height()/2)
-        self.mplTree.tree.setGeometry(0, height()/2, 250, height()/2)
-        self.main_widget.setGeometry(250, 0, width()-250, (height()-25))
-        self.save_button.button.move(250,height()-30)
-        self.text.textBox.setGeometry(self.save_button.button.width()+250, height()-30, width()-250-self.save_button.button.width(), 30)
+        self.dataTree.tree.resize(self.dataTree.tree.width(), height()-30)
+        self.mplTree.tree.setGeometry(width()-250, 0, 250, height()-30)
+        self.main_widget.setGeometry(250, 0, width()-500, (height()-25))
+        self.save_button.button.move(0,height()-30)
+        self.load_button.button.move(self.save_button.button.width(),height()-30)
+        self.text.textBox.setGeometry(self.save_button.button.width()+self.load_button.button.width(), height()-30, width()-self.save_button.button.width(), 30)
 
     def keyPressEvent(self, e):
         # This is our key press handler.  It's mostly just a stub right now.
@@ -317,19 +329,16 @@ class App(QWidget):
                         if type(val) == list:
                             for iv, v in enumerate(val):
                                 valTree = QTreeWidgetItem(keyTree, [str(v)])
-                                #key_list.append(val)
                                 self.treeItemKeyDict[str(valTree)] = key_list + [str(key)] + [iv]
                                 if self.editable:
                                     valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
                         else:
                             valTree = QTreeWidgetItem(keyTree, [str(val)])
-                            #key_list.append(val)
                             self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
                             if self.editable:
                                 valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
                     else:
-                        valTree = QTreeWidgetItem(keyTree, val)
-                        #key_list.append(val)
+                        valTree = QTreeWidgetItem(keyTree, [str(val)])
                         self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
                         if self.editable:
                             valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
@@ -337,7 +346,7 @@ class App(QWidget):
         def onItemChanged(self, test):
             # This works.
             #print("Changed!")
-            print(self.treeItemKeyDict[str(test)])
+            #print(self.treeItemKeyDict[str(test)])
             # Find the key in the data.
             #print(dir(test))
             val = self.data
@@ -349,21 +358,21 @@ class App(QWidget):
                     x = x.get(key)
                     print(key)
             # Because we return the child widget, this is fine.
-            print(val, key)
             # You can't have non list data, so enforce list type.
             # Well, that won't work for mpl stuff, so.
             #try:
             val[key] = test.data(0,0)
             #except:
             #    val = test.data(0,0)
-            print(self.data)
+            #print(dir(test))
             if self.function:
                 self.function()
+            # This means we should add new items from the dictionary appropriately.  Ugh, jesus.
             # Oh hacky, hacky, hack
-            self.tree.itemChanged.disconnect()
-            self.tree.clear()
-            self.updateTree()
-            self.tree.itemChanged.connect(self.onItemChanged)
+            #self.tree.itemChanged.disconnect()
+            #self.tree.clear()
+            #self.updateTree()
+            #self.tree.itemChanged.connect(self.onItemChanged)
             # We also need to rebuild our tree, unfortunately.
             # Although this loops forever, so I'm missing something.
             # I'm not sure why it doesn't properly... update the whole thing?
