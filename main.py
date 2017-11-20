@@ -65,8 +65,9 @@ class MyMplCanvas(FigureCanvas):
 
     def updateFromDict(self):
         d = self.mpl_dict
+        self.fig.clear()
         self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']))
-        #self.axes.hold(False)
+        #self.axes.
 
     def updateSize(self, height, width):
         pass
@@ -113,7 +114,7 @@ class App(QWidget):
         testDict = {'0': ['0', '1'], '1': {'A': ['2'], 'B': ['3', '4']}}
         kinetics = h5py.File('direct.h5', 'r')
         self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height/2), col=3, clickable=True, editable=False)
-        self.mplTree = self.newTree(self, dc.mpl_dict, pos=(0,self.height/2), size=(250,self.height/2), col=1)
+        self.mplTree = self.newTree(self, dc.mpl_dict, pos=(0,self.height/2), size=(250,self.height/2), col=1, function=dc.update_figure)
         button = self.newButton(self, "Update!", "Nothing", (100,70), dc.update_figure, click_args=None)
         #print(dir(layout))
         #layout.addChildWidget(self.dataTree)
@@ -143,7 +144,7 @@ class App(QWidget):
 
     # For displaying data in a tree.
     class newTree():
-        def __init__(self, parent, data, pos, col=1, rows=True, size=None, editable=True, clickable=False):
+        def __init__(self, parent, data, pos, col=1, rows=True, size=None, editable=True, clickable=False, function=None):
             self.tree = QTreeWidget(parent)
             self.tree.setColumnCount(col)
             print(dir(self.tree))
@@ -151,6 +152,7 @@ class App(QWidget):
             self.data = data
             if size:
                 self.tree.setGeometry(pos[0], pos[1], size[0], size[1])
+            self.function = function
             self.editable = editable
             #self.tree.move(pos[0], pos[1])
             # How should we handle this?  Like dictionaries, let's assume.
@@ -251,6 +253,8 @@ class App(QWidget):
             except:
                 val = test.data(0,0)
             print(test.data(0,0), self.data)
+            if self.function:
+                self.function()
             #print(test.data(0,0))
 
         def onClicked(self, test):
