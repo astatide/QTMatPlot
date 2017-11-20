@@ -25,7 +25,7 @@ sns.set_palette('deep')
 
 # and here http://www.boxcontrol.net/embedding-matplotlib-plot-on-pyqt5-gui.html
 
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 # Button Functions
 @pyqtSlot()
@@ -52,10 +52,12 @@ class MyMplCanvas(FigureCanvas):
         FigureCanvas.__init__(self, self.fig)
         self.setParent(parent)
 
-        FigureCanvas.setSizePolicy(self,
+        '''FigureCanvas.setSizePolicy(self,
                 QSizePolicy.Expanding,
                 QSizePolicy.Expanding)
-        FigureCanvas.updateGeometry(self)
+        FigureCanvas.updateGeometry(self)'''
+
+        #self.mpl_connect("scroll_event", self.scrolling)
 
         self.mpl_dict_lit = '''{
                                 'Rows': 2, 
@@ -72,6 +74,14 @@ class MyMplCanvas(FigureCanvas):
         ##timer = QtCore.QTimer(self)
         ##timer.timeout.connect(self.update_figure)
         ##timer.start(1000)
+
+    def scrolling(self, event):
+        print("Scrolling!")
+        val = self.scroll.verticalScrollBar().value()
+        if event.button =="down":
+            self.scroll.verticalScrollBar().setValue(val+100)
+        else:
+            self.scroll.verticalScrollBar().setValue(val-100)
 
     def compute_initial_figure(self):
         self.updateFromDict()
@@ -115,7 +125,23 @@ class App(QWidget):
         self.main_widget = QWidget(self)
         self.layout = QVBoxLayout(self.main_widget)
         dc = MyMplCanvas(self.main_widget, width=10, height=8, dpi=100)
-        self.layout.addWidget(dc)
+
+        # Try the scroll!
+        self.scroll = QScrollArea(self.main_widget)
+        #self.scroll.setMinimumWidth=(5000)
+        self.scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        self.scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        #self.scroll.setWidgetResizable(True)
+        self.scroll.setWidgetResizable(False)
+        scrollContent = QWidget(self.scroll)
+
+        scrollLayout = QVBoxLayout(scrollContent)
+        scrollContent.setLayout(scrollLayout)
+        scrollLayout.addWidget(dc)
+        self.scroll.setWidget(scrollContent)
+        self.layout.addWidget(self.scroll)
+
+        #self.layout.addWidget(dc)
         self.main_widget.move(250,0)
         self.main_widget.setLayout(self.layout)
         #button = self.newButton(self, "Button!", "Nothing", (100,70), self.button_test, click_args=None)
