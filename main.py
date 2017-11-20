@@ -36,14 +36,6 @@ def button_test():
 class MyMplCanvas(FigureCanvas):
     """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
     def __init__(self, parent=None, width=7, height=4, dpi=300, num=1, data=None):
-        sns.set_style('ticks')
-        sns.set_context('paper')
-        sns.axes_style({'font.family': ['monospace'],
-                        'font.sans-serif': ['monospace']
-                        })
-        sns.set(font='sans-serif', style='ticks')
-        #sns.set_palette('husl')
-        sns.set_palette('deep')
         self.data = data
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         # We want the axes cleared every time plot() is called
@@ -71,7 +63,16 @@ class MyMplCanvas(FigureCanvas):
                                 'Figures': {}
                                }'''
         self.mpl_dict = ast.literal_eval(self.mpl_dict_lit)
-        self.fig_dict = '''{ 'type': 'plot', 'data': None }'''
+        self.fig_dict = '''{
+                            'Datasets': 1,
+                            'type': 'plot', 
+                            'data': {} 
+                            }'''
+        self.dset_dict = '''{
+                            'color': 'None',
+                            'alpha': 1, 
+                            'loc': 'None'
+                            }'''
         self.compute_initial_figure()
         self.update_figure()
         ##timer = QtCore.QTimer(self)
@@ -81,12 +82,13 @@ class MyMplCanvas(FigureCanvas):
     def compute_initial_figure(self):
         self.updateFromDict()
 
-    def plot(self, pd, ax):
+    def plot(self, pd, index, ax):
         # pd is the plot dictionary
-        if pd['data'] != None:
+        print(pd)
+        if pd['data'][str(index)]['loc'] != 'None':
             if pd['type'] == 'plot':
                 print("PLOT IT BABY")
-                ax.plot(self.translate_location(pd['data']))
+                ax.plot(self.translate_location(pd['data'][str(index)]['loc']))
                 #self.axes
 
     def updateFromDict(self):
@@ -98,14 +100,19 @@ class MyMplCanvas(FigureCanvas):
         self.fig.set_dpi(int(d['dpi']))
         # We check to see if we need to update the figures.
         # This should just occur on a rebuild, so if we haven't added anything, don't worry about it.
-        print(self.mpl_dict)
         for rows in range(0, int(self.mpl_dict['Rows'])):
             for cols in range(0, int(self.mpl_dict['Columns'])):
                 if str((rows, cols)) not in self.mpl_dict['Figures']:
                     self.mpl_dict['Figures'][str((rows,cols))] = ast.literal_eval(self.fig_dict)
+                for dset in range(0, int(self.mpl_dict['Figures'][str((rows,cols))]['Datasets'])):
+                    if str(dset) not in self.mpl_dict['Figures'][str((rows,cols))]['data']:
+                        self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = ast.literal_eval(self.dset_dict)
+                print(self.mpl_dict)
                 # Throw in the axes object.
                 #print(self.mpl_dict['Figures'][(rows,cols)])
-                self.plot(self.mpl_dict['Figures'][str((rows,cols))], self.axes[rows,cols])
+                for dset in range(0, int(self.mpl_dict['Figures'][str((rows,cols))]['Datasets'])):
+                    self.plot(self.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols])
+
                 
 
 
@@ -120,6 +127,16 @@ class MyMplCanvas(FigureCanvas):
         #l = [np.random.randint(0, 10) for i in range(4)]
 
         #self.axes.plot([0, 1, 2, 3], l, 'r')
+        sns.set_style('ticks')
+        sns.set_context('paper')
+        sns.axes_style({'font.family': ['monospace'],
+                        'font.sans-serif': ['monospace']
+                        })
+        sns.set(font='sans-serif', style='ticks')
+        #sns.set_palette('husl')
+        sns.set_palette('deep')
+        sns.despine()
+        self.fig.tight_layout()
         self.draw()
         FigureCanvas.updateGeometry(self)
 
