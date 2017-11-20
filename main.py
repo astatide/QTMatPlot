@@ -56,6 +56,7 @@ class MyMplCanvas(FigureCanvas):
         #self.mpl_connect("scroll_event", self.scrolling)
 
         self.mpl_dict_lit = '''{
+                                'FilesToLoad': 'IGNORE',
                                 'Rows': 2, 
                                 'Columns': 4,
                                 'Datasets': 1,
@@ -64,13 +65,21 @@ class MyMplCanvas(FigureCanvas):
                                   'width': 7,
                                   'height': 4,
                                  },
+                                'fontsize': {
+                                  'fontsize': 6,
+                                  'titlesize': 8,
+                                  'ticksize': 3
+                                 },
+                                'files': {},
                                 'Colors': {
-                                  0: '#9b59b6',
-                                  1: '#3498db',
-                                  2: '#95a5a6',
-                                  3: '#e74c3c',
-                                  4: '#e34495e',
-                                  5: '#2ecc71'
+                                  0: '#8dd3c7',
+                                  1: '#ffffb3',
+                                  2: '#bebada',
+                                  3: '#fb8072',
+                                  4: '#80b1d3',
+                                  5: '#fdb462',
+                                  6: '#a65628',
+                                  7: '#f781bf'
                                  },
                                 'Figures': {}
                                }'''
@@ -82,7 +91,10 @@ class MyMplCanvas(FigureCanvas):
         self.dset_dict = '''{
                             'color': -1,
                             'alpha': 1, 
-                            'loc': 'None'
+                            'loc': 'None',
+                            'ylabel': '',
+                            'xlabel': '',
+                            'title': ''
                             }'''
         self.compute_initial_figure()
         self.update_figure()
@@ -96,15 +108,43 @@ class MyMplCanvas(FigureCanvas):
     def plot(self, pd, index, ax):
         # pd is the plot dictionary
         print(pd)
+        ax.tick_params(axis='both', labelsize=self.mpl_dict['fontsize']['fontsize'], length=self.mpl_dict['fontsize']['ticksize'])
+        sk = dict(pd['data'][str(index)])
+        if sk['ylabel'] is not None:
+            ax.set_ylabel(sk['ylabel'], fontsize=self.mpl_dict['fontsize']['titlesize'], fontweight='bold')
+        if sk['xlabel'] is not None:
+            ax.set_xlabel(sk['xlabel'], fontsize=self.mpl_dict['fontsize']['titlesize'], fontweight='bold')
+        if sk['title'] is not None:
+            ax.set_title(sk['title'], fontsize=self.mpl_dict['fontsize']['titlesize'], fontweight='bold')
         if pd['data'][str(index)]['loc'] != 'None':
             if pd['type'] == 'plot':
-                print("PLOT IT BABY")
                 try:
                     subplot_kwargs = dict(pd['data'][str(index)])
                     del subplot_kwargs['loc']
+                    del subplot_kwargs['xlabel']
+                    del subplot_kwargs['title']
+                    del subplot_kwargs['ylabel']
                     if subplot_kwargs['color'] == -1:
                         subplot_kwargs['color'] = self.mpl_dict['Colors'][index]
                     handle = ax.plot(self.translate_location(pd['data'][str(index)]['loc']), **subplot_kwargs)
+                    return handle
+                except Exception as e:
+                    if self.notify_func is not None:
+                        self.notify_func(e)
+                    else:
+                        pass
+            if pd['type'] == 'shade':
+                try:
+                    subplot_kwargs = dict(pd['data'][str(index)])
+                    del subplot_kwargs['loc']
+                    del subplot_kwargs['xlabel']
+                    del subplot_kwargs['title']
+                    del subplot_kwargs['ylabel']
+                    if subplot_kwargs['color'] == -1:
+                        subplot_kwargs['color'] = self.mpl_dict['Colors'][index]
+                    ax.plot(self.translate_location(pd['data'][str(index)]['loc'])['expected'][:], **subplot_kwargs)
+                    subplot_kwargs['alpha'] = .3
+                    handle = ax.fill_between(range(0, self.translate_location(pd['data'][str(index)]['loc'])['expected'].shape[0]), self.translate_location(pd['data'][str(index)]['loc'])['ci_ubound'][:], self.translate_location(pd['data'][str(index)]['loc'])['ci_lbound'][:], **subplot_kwargs)
                     return handle
                 except Exception as e:
                     if self.notify_func is not None:
@@ -118,8 +158,8 @@ class MyMplCanvas(FigureCanvas):
         # Clears the figure before we plot more.
         self.fig.clear()
         self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']))
-        self.fig.set_size_inches(float(d['figsize']['width']), float(d['figsize']['height']))
         self.fig.set_dpi(int(d['dpi']))
+        self.fig.set_size_inches(float(d['figsize']['width']), float(d['figsize']['height']))
         # We check to see if we need to update the figures.
         # This should just occur on a rebuild, so if we haven't added anything, don't worry about it.
         for rows in range(0, int(self.mpl_dict['Rows'])):
@@ -148,14 +188,14 @@ class MyMplCanvas(FigureCanvas):
         #l = [np.random.randint(0, 10) for i in range(4)]
 
         #self.axes.plot([0, 1, 2, 3], l, 'r')
-        sns.set_style('ticks')
+        '''sns.set_style('ticks')
         sns.set_context('paper')
         sns.axes_style({'font.family': ['monospace'],
                         'font.sans-serif': ['monospace']
                         })
         sns.set(font='sans-serif', style='ticks')
         sns.set_palette('deep')
-        sns.despine()
+        sns.despine()'''
         self.fig.tight_layout()
         self.draw()
         FigureCanvas.updateGeometry(self)
@@ -393,7 +433,7 @@ class App(QWidget):
             # JUST do it for the rows, cols, and dataset.
             # Oh hacky, hacky, hack
             print(key)
-            if key == 'Rows' or key == 'Columns' or key == 'Datasets':
+            if key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad':
                 self.tree.itemChanged.disconnect()
                 self.tree.clear()
                 self.updateTree()
