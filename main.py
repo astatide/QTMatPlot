@@ -54,12 +54,25 @@ class MyMplCanvas(FigureCanvas):
         FigureCanvas.updateGeometry(self)'''
 
         #self.mpl_connect("scroll_event", self.scrolling)
+        self.fig_dict = '''{
+                            'type': 'plot', 
+                            }'''
+        self.dset_dict = '''{
+                            'color': -1,
+                            'alpha': 1, 
+                            'loc': 'None',
+                            'ylabel': '',
+                            'xlabel': '',
+                            'title': ''
+                            }'''
 
         self.mpl_dict_lit = '''{
                                 'FilesToLoad': 'IGNORE',
                                 'Rows': 2, 
                                 'Columns': 4,
                                 'Datasets': 1,
+                                'FigDefaults': {},
+                                'DSetDefaults': {},
                                 'dpi': 300,
                                 'figsize': {
                                   'width': 7,
@@ -70,7 +83,6 @@ class MyMplCanvas(FigureCanvas):
                                   'titlesize': 8,
                                   'ticksize': 3
                                  },
-                                'files': {},
                                 'Colors': {
                                   0: '#8dd3c7',
                                   1: '#ffffb3',
@@ -84,18 +96,9 @@ class MyMplCanvas(FigureCanvas):
                                 'Figures': {}
                                }'''
         self.mpl_dict = ast.literal_eval(self.mpl_dict_lit)
-        self.fig_dict = '''{
-                            'type': 'plot', 
-                            'data': {} 
-                            }'''
-        self.dset_dict = '''{
-                            'color': -1,
-                            'alpha': 1, 
-                            'loc': 'None',
-                            'ylabel': '',
-                            'xlabel': '',
-                            'title': ''
-                            }'''
+        self.mpl_dict['DSetDefaults'] = ast.literal_eval(self.dset_dict)
+        self.mpl_dict['FigDefaults'] = ast.literal_eval(self.fig_dict)
+        self.mpl_dict['FigDefaults']['data'] = {}
         self.compute_initial_figure()
         self.update_figure()
         ##timer = QtCore.QTimer(self)
@@ -103,7 +106,7 @@ class MyMplCanvas(FigureCanvas):
         ##timer.start(1000)
 
     def compute_initial_figure(self):
-        self.updateFromDict()
+        self.updateFromDict(False)
 
     def plot(self, pd, index, ax):
         # pd is the plot dictionary
@@ -142,6 +145,10 @@ class MyMplCanvas(FigureCanvas):
                     del subplot_kwargs['ylabel']
                     if subplot_kwargs['color'] == -1:
                         subplot_kwargs['color'] = self.mpl_dict['Colors'][index]
+                    elif str(subplot_kwargs['color'])[0] == "#":
+                        pass
+                    else:
+                        subplot_kwargs['color'] = self.mpl_dict['Colors'][int(subplot_kwargs['color'])]
                     ax.plot(self.translate_location(pd['data'][str(index)]['loc'])['expected'][:], **subplot_kwargs)
                     subplot_kwargs['alpha'] = .3
                     handle = ax.fill_between(range(0, self.translate_location(pd['data'][str(index)]['loc'])['expected'].shape[0]), self.translate_location(pd['data'][str(index)]['loc'])['ci_ubound'][:], self.translate_location(pd['data'][str(index)]['loc'])['ci_lbound'][:], **subplot_kwargs)
@@ -153,7 +160,7 @@ class MyMplCanvas(FigureCanvas):
                         pass
                 #self.axes
 
-    def updateFromDict(self):
+    def updateFromDict(self, defaults):
         d = self.mpl_dict
         # Clears the figure before we plot more.
         self.fig.clear()
@@ -164,11 +171,23 @@ class MyMplCanvas(FigureCanvas):
         # This should just occur on a rebuild, so if we haven't added anything, don't worry about it.
         for rows in range(0, int(self.mpl_dict['Rows'])):
             for cols in range(0, int(self.mpl_dict['Columns'])):
-                if str((rows, cols)) not in self.mpl_dict['Figures']:
-                    self.mpl_dict['Figures'][str((rows,cols))] = ast.literal_eval(self.fig_dict)
+                print(defaults)
+                if defaults:
+                    # If we haven't changed the defaults, don't upstate the state.
+                    if str((rows, cols)) not in self.mpl_dict['Figures']:
+                        #self.mpl_dict['Figures'][str((rows,cols))] = ast.literal_eval(self.fig_dict)
+                        self.mpl_dict['Figures'][str((rows,cols))] = dict(self.mpl_dict['FigDefaults'])
+                else:
+                    print("Changing!")
+                    self.mpl_dict['Figures'][str((rows,cols))] = dict(self.mpl_dict['FigDefaults'])
                 for dset in range(0, int(self.mpl_dict['Datasets'])):
-                    if str(dset) not in self.mpl_dict['Figures'][str((rows,cols))]['data']:
-                        self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = ast.literal_eval(self.dset_dict)
+                    if defaults:
+                        if str(dset) not in self.mpl_dict['Figures'][str((rows,cols))]['data']:
+                            #self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = ast.literal_eval(self.dset_dict)
+                            self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = dict(self.mpl_dict['DSetDefaults'])
+                    else:
+                        self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = dict(self.mpl_dict['DSetDefaults'])
+
                 # Throw in the axes object.
                 #print(self.mpl_dict['Figures'][(rows,cols)])
                 for dset in range(0, int(self.mpl_dict['Datasets'])):
@@ -181,10 +200,10 @@ class MyMplCanvas(FigureCanvas):
     def updateSize(self, height, width):
         pass
 
-    def update_figure(self):
+    def update_figure(self, defaults=True):
         # Build a list of 4 random integers between 0 and 10 (both inclusive)
         # We call this whenever the dictionary is updated.
-        self.updateFromDict()
+        self.updateFromDict(defaults)
         #l = [np.random.randint(0, 10) for i in range(4)]
 
         #self.axes.plot([0, 1, 2, 3], l, 'r')
@@ -427,13 +446,18 @@ class App(QWidget):
             #except:
             #    val = test.data(0,0)
             #print(dir(test))
-            if self.function:
-                self.function()
             # This means we should add new items from the dictionary appropriately.  Ugh, jesus.
             # JUST do it for the rows, cols, and dataset.
             # Oh hacky, hacky, hack
             print(key)
-            if key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad':
+            oldkey = self.treeItemKeyDict[str(test)][-2]
+            print(oldkey)
+            defaults = True
+            if key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad' or oldkey == 'DSetDefaults' or oldkey == 'FigDefaults':
+                defaults = False
+            if self.function:
+                self.function(defaults)
+            if not defaults:
                 self.tree.itemChanged.disconnect()
                 self.tree.clear()
                 self.updateTree()
