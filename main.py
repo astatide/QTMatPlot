@@ -2,7 +2,7 @@
 
 # Stuff to get the window open.
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit
 from PyQt5.QtGui import QIcon
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot
@@ -44,6 +44,7 @@ class MyMplCanvas(FigureCanvas):
         sns.set(font='sans-serif', style='ticks')
         #sns.set_palette('husl')
         sns.set_palette('deep')
+        self.data = data
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         # We want the axes cleared every time plot() is called
 
@@ -66,9 +67,11 @@ class MyMplCanvas(FigureCanvas):
                                 'figsize': {
                                   'width': 7,
                                   'height': 4,
-                                 }
+                                 },
+                                'Figures': {}
                                }'''
         self.mpl_dict = ast.literal_eval(self.mpl_dict_lit)
+        self.fig_dict = '''{ 'type': 'plot', 'data': None }'''
         self.compute_initial_figure()
         self.update_figure()
         ##timer = QtCore.QTimer(self)
@@ -78,6 +81,14 @@ class MyMplCanvas(FigureCanvas):
     def compute_initial_figure(self):
         self.updateFromDict()
 
+    def plot(self, pd, ax):
+        # pd is the plot dictionary
+        if pd['data'] != None:
+            if pd['type'] == 'plot':
+                print("PLOT IT BABY")
+                ax.plot(self.translate_location(pd['data']))
+                #self.axes
+
     def updateFromDict(self):
         d = self.mpl_dict
         # Clears the figure before we plot more.
@@ -85,6 +96,18 @@ class MyMplCanvas(FigureCanvas):
         self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']))
         self.fig.set_size_inches(float(d['figsize']['width']), float(d['figsize']['height']))
         self.fig.set_dpi(int(d['dpi']))
+        # We check to see if we need to update the figures.
+        # This should just occur on a rebuild, so if we haven't added anything, don't worry about it.
+        print(self.mpl_dict)
+        for rows in range(0, int(self.mpl_dict['Rows'])):
+            for cols in range(0, int(self.mpl_dict['Columns'])):
+                if str((rows, cols)) not in self.mpl_dict['Figures']:
+                    self.mpl_dict['Figures'][str((rows,cols))] = ast.literal_eval(self.fig_dict)
+                # Throw in the axes object.
+                #print(self.mpl_dict['Figures'][(rows,cols)])
+                self.plot(self.mpl_dict['Figures'][str((rows,cols))], self.axes[rows,cols])
+                
+
 
 
     def updateSize(self, height, width):
@@ -92,8 +115,9 @@ class MyMplCanvas(FigureCanvas):
 
     def update_figure(self):
         # Build a list of 4 random integers between 0 and 10 (both inclusive)
+        # We call this whenever the dictionary is updated.
         self.updateFromDict()
-        l = [np.random.randint(0, 10) for i in range(4)]
+        #l = [np.random.randint(0, 10) for i in range(4)]
 
         #self.axes.plot([0, 1, 2, 3], l, 'r')
         self.draw()
@@ -101,6 +125,30 @@ class MyMplCanvas(FigureCanvas):
 
     def save_figure(self):
         self.fig.savefig("test.pdf")
+
+    def translate_location(self, location):
+        data_loc = None
+        location = ast.literal_eval(location)
+        print(location, len(location))
+        if len(location) == 1:
+            data_loc = self.data[location[0]][:]
+        elif len(location) == 2:
+            try:
+                data_loc = self.data[location[0]][:,int(location[1])]
+            except:
+                data_loc = self.data[location[0]][location[1]][:]
+        elif len(location) == 3:
+            try:
+                data_loc = self.data[location[0]][:,int(location[1]), int(location[2])]
+            except:
+                data_loc = self.data[location[0]][location[1]][:,int(location[2])]
+        elif len(location) == 4:
+            print(len(location), location)
+            try:
+                data_loc = self.data[location[0]][:,int(location[1]), int(location[2]), int(location[3])]
+            except:
+                data_loc = self.data[location[0]][:,int(location[1]), int(location[2])][location[3]]
+        return data_loc
 
 
 class App(QWidget):
@@ -141,9 +189,11 @@ class App(QWidget):
         self.main_widget.setLayout(self.layout)
         #button = self.newButton(self, "Button!", "Nothing", (100,70), self.button_test, click_args=None)
         testDict = {'0': ['0', '1'], '1': {'A': ['2'], 'B': ['3', '4']}}
-        self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height/2), col=3, clickable=True, editable=False)
-        self.mplTree = self.newTree(self, dc.mpl_dict, pos=(0,self.height/2), size=(250,self.height/2), col=1, function=dc.update_figure)
         self.save_button = self.newButton(self, "Save", "Saves the Figure", (250,self.height-30), dc.save_figure, click_args=None)
+        self.text = self.newTextBox(self, size=(0,0), pos=(self.save_button.button.width()+250, self.height-30), init_text="{}".format(kinetics))
+        self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height/2), col=3, clickable=True, editable=False, function=self.text.showText)
+        self.mplTree = self.newTree(self, dc.mpl_dict, pos=(0,self.height/2), size=(250,self.height/2), col=1, function=dc.update_figure)
+        #def __init__(self, parent, size, pos, init_text=""):
         #print(dir(layout))
         #layout.addChildWidget(self.dataTree)
         self.show()
@@ -158,6 +208,7 @@ class App(QWidget):
         self.mplTree.tree.setGeometry(0, height()/2, 250, height()/2)
         self.main_widget.setGeometry(250, 0, width()-250, (height()-25))
         self.save_button.button.move(250,height()-30)
+        self.text.textBox.setGeometry(self.save_button.button.width()+250, height()-30, width()-250-self.save_button.button.width(), 30)
 
     def keyPressEvent(self, e):
         # This is our key press handler.  It's mostly just a stub right now.
@@ -176,7 +227,10 @@ class App(QWidget):
         def __init__(self, parent, data, pos, col=1, rows=True, size=None, editable=True, clickable=False, function=None):
             self.tree = QTreeWidget(parent)
             self.tree.setColumnCount(col)
-            print(dir(self.tree))
+            self.parent = parent
+            self.col = col
+            self.pos = pos
+            self.size = size
             #A = QTreeWidgetItem(self.tree, ["A"])
             self.data = data
             if size:
@@ -188,7 +242,6 @@ class App(QWidget):
             self.rows = rows
             self.treeItemKeyDict = {}
             self.updateTree()
-            print(dir(self.tree))
             if editable:
                 self.tree.itemChanged.connect(self.onItemChanged)
             if clickable:
@@ -200,6 +253,11 @@ class App(QWidget):
 
         def updateTree(self):
             # Python 3 just uses items, not iteritems.
+            #self.tree = QTreeWidget(self.parent)
+            #self.tree.setColumnCount(self.col)
+            #A = QTreeWidgetItem(self.tree, ["A"])
+            if self.size:
+                self.tree.setGeometry(self.pos[0], self.pos[1], self.size[0], self.size[1])
             if type(self.data) == dict:
                 self.handleDict(self.data, self.tree)
 
@@ -235,7 +293,7 @@ class App(QWidget):
                                             if len(val.dtype) > 1:
                                                 for iv in range(0, len(val.dtype)):
                                                     dtypeTree = QTreeWidgetItem(valTree, [str(val.dtype.names[iv])])
-                                                    self.treeItemKeyDict[str(dtypeTree)] = key_list + [str(key)] + [str(val.dtype.names[iv])] + [str(i), str(j)]
+                                                    self.treeItemKeyDict[str(dtypeTree)] = key_list + [str(key)] + [str(i), str(j)] + [str(val.dtype.names[iv])]
                 else:
                     # We want this to be like rows, not columns
                     if self.rows:
@@ -272,18 +330,26 @@ class App(QWidget):
                 if type(x.get(key)) == dict:
                     val = val.get(key)
                     x = x.get(key)
-            print(val)
+                    print(key)
             # Because we return the child widget, this is fine.
             print(val, key)
             # You can't have non list data, so enforce list type.
             # Well, that won't work for mpl stuff, so.
-            try:
-                val[key] = test.data(0,0)
-            except:
-                val = test.data(0,0)
-            print(test.data(0,0), self.data)
+            #try:
+            val[key] = test.data(0,0)
+            #except:
+            #    val = test.data(0,0)
+            print(self.data)
             if self.function:
                 self.function()
+            # Oh hacky, hacky, hack
+            self.tree.itemChanged.disconnect()
+            self.tree.clear()
+            self.updateTree()
+            self.tree.itemChanged.connect(self.onItemChanged)
+            # We also need to rebuild our tree, unfortunately.
+            # Although this loops forever, so I'm missing something.
+            # I'm not sure why it doesn't properly... update the whole thing?
             #print(test.data(0,0))
 
         def onClicked(self, test):
@@ -295,25 +361,16 @@ class App(QWidget):
             # One thing we don't know is precisely how to format this, but that's okay.
             # We could just change this later.
             # We should probably store how we formatted it with the reverse dictionary, but.
-            print(location)
-            if len(location) == 1:
-                print(self.data[location[0]][:])
-            elif len(location) == 2:
-                try:
-                    print(self.data[location[0]][:,int(location[1])])
-                except:
-                    print(self.data[location[0]][location[1]][:])
-            elif len(location) == 3:
-                try:
-                    print(self.data[location[0]][:,int(location[1]), int(location[2])])
-                except:
-                    print(self.data[location[0]][location[1]][:,int(location[2])])
-            elif len(location) == 4:
-                try:
-                    print(self.data[location[0]][:,int(location[1]), int(location[2]), int(location[3])])
-                except:
-                    print(self.data[location[0]][location[1]][:,int(location[2]), int(location[3])])
+            if self.function:
+                self.function(str(location))
 
+    class newTextBox():
+        def __init__(self, parent, size, pos, init_text=""):
+            self.textBox = QLineEdit(parent)
+            self.textBox.setText(init_text)
+
+        def showText(self, text):
+            self.textBox.setText(text)
 
     class newButton():
         def __init__(self, parent, label, tooltip, pos, function, click_args=None):
