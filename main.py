@@ -30,6 +30,8 @@ import yaml
 # and here http://www.boxcontrol.net/embedding-matplotlib-plot-on-pyqt5-gui.html
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backend_bases import key_press_handler
 
 # Button Functions
 @pyqtSlot()
@@ -213,15 +215,24 @@ class MyMplCanvas(FigureCanvas):
                 # Throw in the axes object.
                 for dset in range(0, int(self.parent.mpl_dict['Datasets'])):
                     if self.parent.mpl_dict['Active'] == str((rows,cols)):
+                        if self.al[(rows,cols)][0] != 0 and self.al[(rows,cols)][1] != 0:
+                            try:
+                                self.al[(rows,cols)][0].remove()
+                                self.al[(rows,cols)][1].remove()
+                            except:
+                                pass
                         self.al[(rows,cols)][0] = self.axes[rows,cols].axhline(color="r", lw=4)
                         self.al[(rows,cols)][1] = self.axes[rows,cols].axvline(color="r", lw=4)
                     else:
                         print("Not Active!")
                         if self.al[(rows,cols)][0] != 0 and self.al[(rows,cols)][1] != 0:
-                            self.al[(rows,cols)][0].remove()
-                            self.al[(rows,cols)][1].remove()
-                            self.al[(rows,cols)] = [0,0]
+                            try:
+                                self.al[(rows,cols)][0].remove()
+                                self.al[(rows,cols)][1].remove()
+                            except:
+                                pass
                     if self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] == True:
+                        self.axes[rows,cols].clear()
                         self.plot(self.parent.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols], active=False)
                         self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = False
                         plotted = True
@@ -276,8 +287,14 @@ class MyMplCanvas(FigureCanvas):
             self.parent.mpl_dict['Active'] = self.hoverAxes
             # For some reason, doing this screws everything up.  Have to look into that.
             #self.parent.mpl_dict['keyTree.Active'].setText(1, str(self.hoverAxes))
-            self.update_figure()
             #self.activeAxes = self.hoverAxes
+            FigureCanvas.mousePressEvent(self, event)
+            self.update_figure()
+
+    '''def wheelEvent(self, event):
+        print(dir(event))
+        self.parent.mpl_dict['dpi'] *= event.pixelDelta().x()
+        self.update_figure()'''
 
     def returnAxesPos(self):
         return_list = []
@@ -432,10 +449,13 @@ class App(QMainWindow):
         # Create the dock, create a new widget, create a layout for that widget, then add all the widgets into that widget, then add that widget to th dock.  Ha
         self.textdock = QDockWidget("", self)
         self.bwidget = QWidget(self)
+        self.toolbar = NavigationToolbar(self.dc, self.bwidget)
+        self.dc.mpl_connect('key_press_event', self.on_key_press)
         self.blayout = QHBoxLayout(self.textdock)
         self.blayout.addWidget(self.text.textBox)
         self.blayout.addWidget(self.save_button.button)
         self.blayout.addWidget(self.load_button.button)
+        self.blayout.addWidget(self.toolbar)
         self.bwidget.setLayout(self.blayout)
         # Remove title bar.
         self.textdock.setTitleBarWidget(QWidget())
@@ -463,6 +483,12 @@ class App(QMainWindow):
         #def __init__(self, parent, size, pos, init_text=""):
         #layout.addChildWidget(self.dataTree)
         self.show()
+
+    def on_key_press(self, event):
+        print('you pressed', event.key)
+        # implement the default mpl key press events described at
+        # http://matplotlib.org/users/navigation_toolbar.html#navigation-keyboard-shortcuts
+        key_press_handler(event, self.dc, self.toolbar)
 
     def notify(self, text):
         self.text.showText(str(text))
