@@ -39,10 +39,13 @@ def button_test():
 # Now, from that other site...
 class MyMplCanvas(FigureCanvas):
     """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
-    def __init__(self, parent=None, width=7, height=4, dpi=300, num=1, data=None, notify_func=None):
+    def __init__(self, parent=None, data_parent=None, width=7, height=4, dpi=300, num=1, data=None, notify_func=None):
         self.data = data
         self.notify_func = notify_func
         self.fig = Figure(figsize=(width, height), dpi=dpi)
+        # Oddly, we don't care
+        self.parent = data_parent
+        #self
         # We want the axes cleared every time plot() is called
 
 
@@ -108,19 +111,18 @@ class MyMplCanvas(FigureCanvas):
         ##timer.start(1000)
 
     def compute_initial_figure(self):
-        self.updateFromDict(False)
+        self.updateFromDict()
 
     def plot(self, pd, index, ax):
         # pd is the plot dictionary
-        print(pd)
-        ax.tick_params(axis='both', labelsize=float(self.mpl_dict['fontsize']['fontsize']), length=self.mpl_dict['fontsize']['ticksize'])
+        ax.tick_params(axis='both', labelsize=float(self.parent.mpl_dict['fontsize']['fontsize']), length=self.parent.mpl_dict['fontsize']['ticksize'])
         sk = dict(pd['data'][str(index)])
         if sk['ylabel'] is not None:
-            ax.set_ylabel(sk['ylabel'], fontsize=float(self.mpl_dict['fontsize']['titlesize']), fontweight='bold')
+            ax.set_ylabel(sk['ylabel'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
         if sk['xlabel'] is not None:
-            ax.set_xlabel(sk['xlabel'], fontsize=float(self.mpl_dict['fontsize']['titlesize']), fontweight='bold')
+            ax.set_xlabel(sk['xlabel'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
         if sk['title'] is not None:
-            ax.set_title(sk['title'], fontsize=float(self.mpl_dict['fontsize']['titlesize']), fontweight='bold')
+            ax.set_title(sk['title'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
         if pd['data'][str(index)]['loc'] != 'None':
             if pd['type'] == 'plot':
                 try:
@@ -130,7 +132,7 @@ class MyMplCanvas(FigureCanvas):
                     del subplot_kwargs['title']
                     del subplot_kwargs['ylabel']
                     if subplot_kwargs['color'] == -1:
-                        subplot_kwargs['color'] = self.mpl_dict['Colors'][str(index)]
+                        subplot_kwargs['color'] = self.parent.mpl_dict['Colors'][str(index)]
                     handle = ax.plot(self.translate_location(pd['data'][str(index)]['loc']), **subplot_kwargs)
                     return handle
                 except Exception as e:
@@ -146,11 +148,11 @@ class MyMplCanvas(FigureCanvas):
                     del subplot_kwargs['title']
                     del subplot_kwargs['ylabel']
                     if subplot_kwargs['color'] == -1:
-                        subplot_kwargs['color'] = self.mpl_dict['Colors'][index]
+                        subplot_kwargs['color'] = self.parent.mpl_dict['Colors'][index]
                     elif str(subplot_kwargs['color'])[0] == "#":
                         pass
                     else:
-                        subplot_kwargs['color'] = self.mpl_dict['Colors'][int(subplot_kwargs['color'])]
+                        subplot_kwargs['color'] = self.parent.mpl_dict['Colors'][int(subplot_kwargs['color'])]
                     ax.plot(self.translate_location(pd['data'][str(index)]['loc'])['expected'][:], **subplot_kwargs)
                     subplot_kwargs['alpha'] = .3
                     handle = ax.fill_between(range(0, self.translate_location(pd['data'][str(index)]['loc'])['expected'].shape[0]), self.translate_location(pd['data'][str(index)]['loc'])['ci_ubound'][:], self.translate_location(pd['data'][str(index)]['loc'])['ci_lbound'][:], **subplot_kwargs)
@@ -162,8 +164,8 @@ class MyMplCanvas(FigureCanvas):
                         pass
                 #self.axes
 
-    def updateFromDict(self, defaults):
-        d = self.mpl_dict
+    def updateFromDict(self):
+        d = self.parent.mpl_dict
         # Clears the figure before we plot more.
         self.fig.clear()
         self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']))
@@ -171,27 +173,11 @@ class MyMplCanvas(FigureCanvas):
         self.fig.set_size_inches(float(d['figsize']['width']), float(d['figsize']['height']))
         # We check to see if we need to update the figures.
         # This should just occur on a rebuild, so if we haven't added anything, don't worry about it.
-        for rows in range(0, int(self.mpl_dict['Rows'])):
-            for cols in range(0, int(self.mpl_dict['Columns'])):
-                if defaults:
-                    # If we haven't changed the defaults, don't upstate the state.
-                    if str((rows, cols)) not in self.mpl_dict['Figures']:
-                        #self.mpl_dict['Figures'][str((rows,cols))] = ast.literal_eval(self.fig_dict)
-                        self.mpl_dict['Figures'][str((rows,cols))] = copy.deepcopy(self.mpl_dict['FigDefaults'])
-                else:
-                    self.mpl_dict['Figures'][str((rows,cols))] = copy.deepcopy(self.mpl_dict['FigDefaults'])
-                for dset in range(0, int(self.mpl_dict['Datasets'])):
-                    if defaults:
-                        if str(dset) not in self.mpl_dict['Figures'][str((rows,cols))]['data']:
-                            #self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = ast.literal_eval(self.dset_dict)
-                            self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = copy.deepcopy(self.mpl_dict['DSetDefaults'])
-                    else:
-                        self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = copy.deepcopy(self.mpl_dict['DSetDefaults'])
-
+        for rows in range(0, int(self.parent.mpl_dict['Rows'])):
+            for cols in range(0, int(self.parent.mpl_dict['Columns'])):
                 # Throw in the axes object.
-                #print(self.mpl_dict['Figures'][(rows,cols)])
-                for dset in range(0, int(self.mpl_dict['Datasets'])):
-                    self.plot(self.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols])
+                for dset in range(0, int(self.parent.mpl_dict['Datasets'])):
+                    self.plot(self.parent.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols])
 
                 
 
@@ -203,7 +189,7 @@ class MyMplCanvas(FigureCanvas):
     def update_figure(self, defaults=True):
         # Build a list of 4 random integers between 0 and 10 (both inclusive)
         # We call this whenever the dictionary is updated.
-        self.updateFromDict(defaults)
+        self.updateFromDict()
         #l = [np.random.randint(0, 10) for i in range(4)]
 
         #self.axes.plot([0, 1, 2, 3], l, 'r')
@@ -222,12 +208,12 @@ class MyMplCanvas(FigureCanvas):
     def save_figure(self):
         self.fig.savefig("test.pdf")
         with open('test.yml', 'w') as outfile:
-            yaml.dump(self.mpl_dict, outfile, default_flow_style=False)
+            yaml.dump(self.parent.mpl_dict, outfile, default_flow_style=False)
 
     def load_yaml(self):
         test = yaml.load(open('test.yml', 'r'))
         if test != None:
-            self.mpl_dict = test
+            self.parent.mpl_dict = test
             self.update_figure()
 
     def translate_location(self, location):
@@ -262,6 +248,51 @@ class App(QWidget):
         self.top = 10
         self.width = 640
         self.height = 480
+        self.fig_dict = '''{
+                            'type': 'plot', 
+                            }'''
+        self.dset_dict = '''{
+                            'color': -1,
+                            'alpha': 1, 
+                            'loc': 'None',
+                            'ylabel': '',
+                            'xlabel': '',
+                            'title': ''
+                            }'''
+
+        self.mpl_dict_lit = '''{
+                                'FilesToLoad': 'IGNORE',
+                                'Rows': 2, 
+                                'Columns': 4,
+                                'Datasets': 1,
+                                'FigDefaults': {},
+                                'DSetDefaults': {},
+                                'dpi': 300,
+                                'figsize': {
+                                  'width': 7,
+                                  'height': 4,
+                                 },
+                                'fontsize': {
+                                  'fontsize': 6,
+                                  'titlesize': 8,
+                                  'ticksize': 3
+                                 },
+                                'Colors': {
+                                  0: '#8dd3c7',
+                                  1: '#ffffb3',
+                                  2: '#bebada',
+                                  3: '#fb8072',
+                                  4: '#80b1d3',
+                                  5: '#fdb462',
+                                  6: '#a65628',
+                                  7: '#f781bf'
+                                 },
+                                'Figures': {}
+                               }'''
+        self.mpl_dict = ast.literal_eval(self.mpl_dict_lit)
+        self.mpl_dict['DSetDefaults'] = ast.literal_eval(self.dset_dict)
+        self.mpl_dict['FigDefaults'] = ast.literal_eval(self.fig_dict)
+        self.mpl_dict['FigDefaults']['data'] = {}
         self.initUI()
  
     def initUI(self):
@@ -271,12 +302,13 @@ class App(QWidget):
         self.main_widget = QWidget(self)
         self.layout = QVBoxLayout(self.main_widget)
         kinetics = h5py.File('direct.h5', 'r')
-        dc = MyMplCanvas(self.main_widget, width=10, height=8, dpi=100, data=kinetics, notify_func=self.notify)
-        self.save_button = self.newButton(self, "Save", "Saves the Figure", (250,self.height-30), dc.save_figure, click_args=None)
-        self.load_button = self.newButton(self, "Load Yaml", "Loads the Config", (250,self.height-30), dc.load_yaml, click_args=None)
+        self.updateFromDict(False, firstrun=True)
+        self.dc = MyMplCanvas(self.main_widget, data_parent=self, width=10, height=8, dpi=100, data=kinetics, notify_func=self.notify)
+        self.save_button = self.newButton(self, "Save", "Saves the Figure", (250,self.height-30), self.dc.save_figure, click_args=None)
+        self.load_button = self.newButton(self, "Load Yaml", "Loads the Config", (250,self.height-30), self.dc.load_yaml, click_args=None)
         self.text = self.newTextBox(self, size=(0,0), pos=(self.save_button.button.width()+250, self.height-30), init_text="{}".format(kinetics))
-        self.mplTree = self.newTree(self, dc.mpl_dict, pos=(self.width-250,0), size=(250,self.height-30), col=1, function=dc.update_figure, rows=True)
-        self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText, function2=dc.update_figure, get_figures=self.mplTree.getFigures, mpl=dc.mpl_dict)
+        self.mplTree = self.newTree(self, self.mpl_dict, pos=(self.width-250,0), size=(250,self.height-30), col=1, function=self.updateFromDict, rows=True)
+        self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText, function2=self.updateFromDict, get_figures=self.mplTree.getFigures, mpl=self.mpl_dict)
 
         # Try the scroll!
         self.scroll = QScrollArea(self.main_widget)
@@ -287,7 +319,7 @@ class App(QWidget):
 
         scrollLayout = QVBoxLayout(scrollContent)
         scrollContent.setLayout(scrollLayout)
-        scrollLayout.addWidget(dc)
+        scrollLayout.addWidget(self.dc)
         self.scroll.setWidget(scrollContent)
         self.layout.addWidget(self.scroll)
 
@@ -298,12 +330,78 @@ class App(QWidget):
         #button = self.newButton(self, "Button!", "Nothing", (100,70), self.button_test, click_args=None)
         testDict = {'0': ['0', '1'], '1': {'A': ['2'], 'B': ['3', '4']}}
         #def __init__(self, parent, size, pos, init_text=""):
-        #print(dir(layout))
         #layout.addChildWidget(self.dataTree)
         self.show()
 
     def notify(self, text):
         self.text.showText(str(text))
+
+    def refreshWidgets(self):
+        self.mplTree.parent.mpl_dict = self.mpl_dict
+        self.dataTree.parent.mpl_dict = self.mpl_dict
+        self.dc.parent.mpl_dict = self.mpl_dict
+        # Danger; recursion.
+        self.mplTree.updateTree()
+        #self.dataTree.updateTree()
+        self.dc.update_figure()
+        #pass
+
+    def updateFromDict(self, defaults=False, firstrun=False):
+        d = self.mpl_dict
+        # Clears the figure before we plot more.
+        # We check to see if we need to update the figures.
+        # This should just occur on a rebuild, so if we haven't added anything, don't worry about it.
+        for rows in range(0, int(self.mpl_dict['Rows'])):
+            for cols in range(0, int(self.mpl_dict['Columns'])):
+                if defaults:
+                    # If we haven't changed the defaults, don't upstate the state.
+                    if str((rows, cols)) not in self.mpl_dict['Figures']:
+                        #self.mpl_dict['Figures'][str((rows,cols))] = ast.literal_eval(self.fig_dict)
+                        new_dict = {}
+                        for key, val in self.mpl_dict['FigDefaults'].items():
+                            if type(key) == str and len(key) >= 6:
+                                if key[0:7] != 'keyTree' and key[0:7] != 'valTree':
+                                    new_dict[key] = val
+                            else:
+                                new_dict[key] = val
+                        self.mpl_dict['Figures'][str((rows,cols))] = copy.deepcopy(new_dict)
+                else:
+                    new_dict = {}
+                    for key, val in self.mpl_dict['FigDefaults'].items():
+                        if type(key) == str and len(key) >= 6:
+                            if key[0:7] != 'keyTree' and key[0:7] != 'valTree':
+                                new_dict[key] = val
+                        else:
+                            new_dict[key] = val
+                    self.mpl_dict['Figures'][str((rows,cols))] = copy.deepcopy(new_dict)
+                for dset in range(0, int(self.mpl_dict['Datasets'])):
+                    if defaults:
+                        if str(dset) not in self.mpl_dict['Figures'][str((rows,cols))]['data']:
+                            #self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = ast.literal_eval(self.dset_dict)
+                            new_dict = {}
+                            for key, val in self.mpl_dict['DSetDefaults'].items():
+                                if type(key) == str and len(key) >= 6:
+                                    if key[0:7] != 'keyTree' and key[0:7] != 'valTree':
+                                        new_dict[key] = val
+                                else:
+                                    new_dict[key] = val
+                            self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = copy.deepcopy(new_dict)
+                    else:
+                        #self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = copy.copy(self.mpl_dict['DSetDefaults'])
+                        new_dict = {}
+                        for key, val in self.mpl_dict['DSetDefaults'].items():
+                            if type(key) == str and len(key) >= 6:
+                                if key[0:7] != 'keyTree' and key[0:7] != 'valTree':
+                                    new_dict[key] = val
+                            else:
+                                new_dict[key] = val
+                        self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = copy.deepcopy(new_dict)
+
+                # Throw in the axes object.
+                #print(self.mpl_dict['Figures'][(rows,cols)])
+        #self.dc.update_figure(defaults)
+        if not firstrun:
+            self.refreshWidgets()
 
     def resizeEvent(self, event):
         # size().height/width should do it.
@@ -368,34 +466,49 @@ class App(QWidget):
             horizontal = event
             horizontal.setX(0)
             index = self.tree.indexAt(horizontal)
-            print(self.tree.itemFromIndex(index))
             location = self.treeItemKeyDict[str(self.tree.itemFromIndex(index))]
-            print(location)
             # Now we have the actual menu item we need to send to the dictionary.  That's location.
             # Now, create the menu...
             self.menu = QMenu()
             # Add a series of actions.  So far, we just want this simple: subplots, and datasets.  Send em on!
-            for key,val in self.mpl['Figures'].items():
-                print(key,val)
-                for dkey,dval in val['data'].items():
-                    send_action = QAction((str(key) + ":" + str(dkey)), self.tree)
-                    #send_action.triggered.connect(lambda key, dkey, location : self.reassignMpl(key, dkey, location))
-                    onSend = { 'key': key, 'dkey': dkey, 'location': location }
-                    print(key, dkey, location)
-                    send_action.triggered.connect(lambda: self.reassignMpl(key, dkey, location))
-                    self.menu.addAction(send_action)
+            self.itemDict = {}
+            i = 0
+            for key,val in self.parent.mpl_dict['Figures'].items():
+                if type(val) == dict:
+                    for dkey,dval in val['data'].items():
+                        if type(dval) != QTreeWidgetItem:
+                            send_action = QAction((str(key) + ":" + str(dkey)), self.tree)
+                            #send_action.triggered.connect(lambda key, dkey, location : self.reassignMpl(key, dkey, location))
+                            onSend = { 'key': key, 'dkey': dkey, 'location': location }
+                            self.itemDict[i] = onSend
+                            # Sort of works?  In a "doesn't work" type of way.
+                            #send_action.triggered.connect(lambda: self.reassignMpl(key, dkey, location))
+                            send_action.triggered.connect(lambda i : self.reassignMpl(i))
+                            self.menu.addAction(send_action)
             #e_action = QAction(str(event), self.tree)
             #self.menu.addAction(e_action)
             self.menu.popup(QCursor.pos())
 
-        def reassignMpl(self, key, dkey, location):
+        def reassignMpl(self, i):
+            key = self.itemDict[i]['key']
+            dkey = self.itemDict[i]['dkey']
+            location = self.itemDict[i]['location']
             #tmp = self.mpl.get(['Figures'][key]['data'][dkey]) 
-            tmp = self.mpl.get(['Figures'])
-            tmp = tmp.get([key])
-            tmp = tmp.get(['data'])
-            tmp = tmp.get([dkey])
-            tmp['loc'] = location
-            self.function2()
+            #tmp = self.parent.mpl_dict.get('Figures')
+            #tmp = tmp.get(key)
+            #tmp = tmp.get('data')
+            #tmp = tmp.get(dkey)
+            #tmp['loc'] = location
+            # Forc dictionary update?
+            #d = copy.deepcopy(self.parent.mpl_dict)
+            print(key, dkey, location)
+            self.parent.mpl_dict['Figures'][str(key)]['data'][str(dkey)]['loc'] = location
+            #self.parent.mpl_dict = copy.deepcopy(d)
+
+            #tmp = self.parent.mpl_dict.get(['Figures'][key]['data'])
+            #tmp[dkey]['loc'] = location
+            self.parent.refreshWidgets()
+            #self.function2()
 
         def updateData(data):
             self.data = data
@@ -406,10 +519,16 @@ class App(QWidget):
             #self.tree = QTreeWidget(self.parent)
             #self.tree.setColumnCount(self.col)
             #A = QTreeWidgetItem(self.tree, ["A"])
+            try:
+                self.tree.itemChanged.disconnect()
+            except:
+                pass
+            #self.tree.clear()
             if self.size:
                 self.tree.setGeometry(self.pos[0], self.pos[1], self.size[0], self.size[1])
             if type(self.data) == dict:
                 self.handleDict(self.data, self.tree)
+            self.tree.itemChanged.connect(self.onItemChanged)
 
         def getFigures(self):
             return self.figures
@@ -418,57 +537,75 @@ class App(QWidget):
             # We can actually have numerous structures, here.
             # Why not keep track of it, for now?
             # We want to do a reverse lookup
-            for key, val in dict_data.items():
-                keyTree = QTreeWidgetItem(tree, [str(key)])
-                self.treeItemKeyDict[str(keyTree)] = key_list + [str(key)]
-                if key == 'Figures':
-                    self.figures = keyTree
-                if type(val) == dict:
-                    self.handleDict(val, keyTree, key_list + [str(key)])
-                elif type(val) == h5py._hl.dataset.Dataset:
-                    if len(val.shape) == 1:
-                        # Here, we don't want to display everything in the list.  Just... let it be.
-                        valTree = QTreeWidgetItem(keyTree, [str(val)])
-                        self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
-                        if hasattr(val, 'dtype'):
-                            if len(val.dtype) > 1:
-                                for iv in range(0, len(val.dtype)):
-                                    dtypeTree = QTreeWidgetItem(valTree, [str(val.dtype.names[iv])])
-                                    self.treeItemKeyDict[str(dtypeTree)] = key_list + [str(key)] + [str(val.dtype.names[iv])]
-                    elif len(val.shape) > 1:
-                        for n in range(1, len(val.shape)):
-                            for i in range(0, n):
-                                for j in range(0, n):
-                                    if i != j:
-                                        # Iterate through and add each dimension that isn't time to the list.
-                                        valTree = QTreeWidgetItem(keyTree, [str(key), str(i), str(j)])
-                                        self.treeItemKeyDict[str(valTree)] = key_list + [str(key), str(i), str(j)]
-                                        if hasattr(val, 'dtype'):
-                                            if len(val.dtype) > 1:
-                                                for iv in range(0, len(val.dtype)):
-                                                    dtypeTree = QTreeWidgetItem(valTree, [str(val.dtype.names[iv])])
-                                                    self.treeItemKeyDict[str(dtypeTree)] = key_list + [str(key)] + [str(i), str(j)] + [str(val.dtype.names[iv])]
+            ddc = copy.copy(dict_data)
+            con = False
+            for key, val in ddc.items():
+                if type(key) == str and len(key) >= 6:
+                    if key[0:7] != 'keyTree' and key[0:7] != 'valTree':
+                        con = True
+                    else:
+                        con = False
                 else:
-                    # We want this to be like rows, not columns
-                    if self.rows:
-                        if type(val) == list:
-                            for iv, v in enumerate(val):
-                                valTree = QTreeWidgetItem(keyTree, [str(v)])
-                                self.treeItemKeyDict[str(valTree)] = key_list + [str(key)] + [iv]
-                                if self.editable:
-                                    valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
-                        else:
+                    con = True
+                if con:
+                    if 'keyTree.{}'.format(key) not in dict_data:
+                        keyTree = QTreeWidgetItem(tree, [str(key)])
+                        dict_data['keyTree.{}'.format(key)] = keyTree
+                        self.treeItemKeyDict[str(keyTree)] = key_list + [str(key)]
+                    else:
+                        keyTree = dict_data['keyTree.{}'.format(key)]
+                    if key == 'Figures':
+                        self.figures = keyTree
+                    if type(val) == dict:
+                        self.handleDict(val, keyTree, key_list + [str(key)])
+                    elif type(val) == h5py._hl.dataset.Dataset:
+                        if len(val.shape) == 1:
+                            # Here, we don't want to display everything in the list.  Just... let it be.
                             valTree = QTreeWidgetItem(keyTree, [str(val)])
+                            self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
+                            if hasattr(val, 'dtype'):
+                                if len(val.dtype) > 1:
+                                    for iv in range(0, len(val.dtype)):
+                                        dtypeTree = QTreeWidgetItem(valTree, [str(val.dtype.names[iv])])
+                                        self.treeItemKeyDict[str(dtypeTree)] = key_list + [str(key)] + [str(val.dtype.names[iv])]
+                        elif len(val.shape) > 1:
+                            for n in range(1, len(val.shape)):
+                                for i in range(0, n):
+                                    for j in range(0, n):
+                                        if i != j:
+                                            # Iterate through and add each dimension that isn't time to the list.
+                                            valTree = QTreeWidgetItem(keyTree, [str(key), str(i), str(j)])
+                                            self.treeItemKeyDict[str(valTree)] = key_list + [str(key), str(i), str(j)]
+                                            if hasattr(val, 'dtype'):
+                                                if len(val.dtype) > 1:
+                                                    for iv in range(0, len(val.dtype)):
+                                                        dtypeTree = QTreeWidgetItem(valTree, [str(val.dtype.names[iv])])
+                                                        self.treeItemKeyDict[str(dtypeTree)] = key_list + [str(key)] + [str(i), str(j)] + [str(val.dtype.names[iv])]
+                    else:
+                        # We want this to be like rows, not columns
+                        if self.rows:
+                            if type(val) == list:
+                                for iv, v in enumerate(val):
+                                    if 'valTree.{}.{}'.format(key,iv) not in dict_data:
+                                        valTree = QTreeWidgetItem(keyTree, [str(v)])
+                                        self.treeItemKeyDict[str(valTree)] = key_list + [str(key)] + [iv]
+                                        if self.editable:
+                                            valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
+                                        dict_data['valTree.{}.{}'.format(key,iv)] = valTree
+                            else:
+                                if 'valTree.{}.{}'.format(key,val) not in dict_data:
+                                    valTree = QTreeWidgetItem(keyTree, [str(val)])
+                                    self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
+                                    if self.editable:
+                                        valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
+                                    dict_data['valTree.{}.{}'.format(key,val)] = valTree
+                        else:
+                            del self.treeItemKeyDict[str(keyTree)]
+                            del keyTree
+                            valTree = QTreeWidgetItem(tree, [str(key), str(val)])
                             self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
                             if self.editable:
                                 valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
-                    else:
-                        del self.treeItemKeyDict[str(keyTree)]
-                        del keyTree
-                        valTree = QTreeWidgetItem(tree, [str(key), str(val)])
-                        self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
-                        if self.editable:
-                            valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
 
         def onItemChanged(self, test):
             # This works.
@@ -486,7 +623,6 @@ class App(QWidget):
                         x = x.get(key)
                         print(key)
             else:
-                print(self.treeItemKeyDict[str(test)])
                 for key in self.treeItemKeyDict[str(test)]:
                     if type(x.get(key)) == dict:
                         val = val.get(key)
@@ -507,7 +643,6 @@ class App(QWidget):
             except:
                 oldkey = self.treeItemKeyDict[str(test)][-1]
             defaults = True
-            print(key, oldkey)
             # TEST code
             #print("TESTING")
             #print(dir(self.tree))
@@ -515,11 +650,11 @@ class App(QWidget):
                 defaults = False
             if self.function:
                 self.function(defaults)
-            if not defaults:
-                self.tree.itemChanged.disconnect()
-                self.tree.clear()
-                self.updateTree()
-                self.tree.itemChanged.connect(self.onItemChanged)
+            #if not defaults:
+            #    self.tree.itemChanged.disconnect()
+            #    self.tree.clear()
+            self.updateTree()
+            #    self.tree.itemChanged.connect(self.onItemChanged)
             # We also need to rebuild our tree, unfortunately.
             # Although this loops forever, so I'm missing something.
             # I'm not sure why it doesn't properly... update the whole thing?
@@ -531,7 +666,6 @@ class App(QWidget):
             # This is the thing which will actually return our dataset.
             #print(self.treeItemKeyDict[str(self.tree.selectedItems()[0])])
             location = self.treeItemKeyDict[str(self.tree.selectedItems()[0])]
-            print(str(self.tree.selectedItems()[0]))
             # One thing we don't know is precisely how to format this, but that's okay.
             # We could just change this later.
             # We should probably store how we formatted it with the reverse dictionary, but.
