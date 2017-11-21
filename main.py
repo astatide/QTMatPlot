@@ -500,6 +500,7 @@ class App(QWidget):
                             #send_action.triggered.connect(lambda: self.reassignMpl(key, dkey, location))
                             send_action.triggered.connect(lambda i : self.reassignMpl(i))
                             self.menu.addAction(send_action)
+                            i += 1
             #e_action = QAction(str(event), self.tree)
             #self.menu.addAction(e_action)
             self.menu.popup(QCursor.pos())
@@ -518,6 +519,7 @@ class App(QWidget):
             #d = copy.deepcopy(self.parent.mpl_dict)
             print(key, dkey, location)
             self.parent.mpl_dict['Figures'][str(key)]['data'][str(dkey)]['loc'] = location
+            self.parent.mpl_dict['Figures'][str(key)]['data'][str(dkey)]['valTree.loc'].setText(0, str(location))
             #self.parent.mpl_dict = copy.deepcopy(d)
 
             #tmp = self.parent.mpl_dict.get(['Figures'][key]['data'])
