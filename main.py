@@ -66,6 +66,7 @@ class MyMplCanvas(FigureCanvas):
         #self.mpl_connect("scroll_event", self.scrolling)
         self.fig_dict = '''{
                             'type': 'plot', 
+                            'Update': False,
                             }'''
         self.dset_dict = '''{
                             'color': -1,
@@ -78,6 +79,7 @@ class MyMplCanvas(FigureCanvas):
 
         self.mpl_dict_lit = '''{
                                 'FilesToLoad': 'IGNORE',
+                                'Update': True,
                                 'Rows': 2, 
                                 'Columns': 4,
                                 'Datasets': 1,
@@ -109,6 +111,7 @@ class MyMplCanvas(FigureCanvas):
         self.mpl_dict['DSetDefaults'] = ast.literal_eval(self.dset_dict)
         self.mpl_dict['FigDefaults'] = ast.literal_eval(self.fig_dict)
         self.mpl_dict['FigDefaults']['data'] = {}
+        self.al = np.empty((1,1), dtype=[])
         self.compute_initial_figure()
         self.update_figure()
         ##timer = QtCore.QTimer(self)
@@ -190,22 +193,41 @@ class MyMplCanvas(FigureCanvas):
     def updateFromDict(self):
         d = self.parent.mpl_dict
         # Clears the figure before we plot more.
-        self.fig.clear()
-        self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']))
-        self.fig.set_dpi(int(d['dpi']))
-        self.fig.set_size_inches(float(d['figsize']['width']), float(d['figsize']['height']))
+        if self.parent.mpl_dict['Update'] == True:
+            self.fig.clear()
+            self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']))
+            self.al = {}
+            for rows in range(0, int(self.parent.mpl_dict['Rows'])):
+                for cols in range(0, int(self.parent.mpl_dict['Columns'])):
+                    self.al[(rows,cols)] = [0,0]
+            self.fig.set_dpi(int(d['dpi']))
+            self.fig.set_size_inches(float(d['figsize']['width']), float(d['figsize']['height']))
+            self.parent.mpl_dict['Update'] = False
+        print(self.parent.mpl_dict['Update'])
         # We check to see if we need to update the figures.
         # This should just occur on a rebuild, so if we haven't added anything, don't worry about it.
         active = False
+        plotted = False
         for rows in range(0, int(self.parent.mpl_dict['Rows'])):
             for cols in range(0, int(self.parent.mpl_dict['Columns'])):
                 # Throw in the axes object.
                 for dset in range(0, int(self.parent.mpl_dict['Datasets'])):
                     if self.parent.mpl_dict['Active'] == str((rows,cols)):
-                        active = True
+                        self.al[(rows,cols)][0] = self.axes[rows,cols].axhline(color="r", lw=4)
+                        self.al[(rows,cols)][1] = self.axes[rows,cols].axvline(color="r", lw=4)
                     else:
-                        active = False
-                    self.plot(self.parent.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols], active=active)
+                        print("Not Active!")
+                        if self.al[(rows,cols)][0] != 0 and self.al[(rows,cols)][1] != 0:
+                            self.al[(rows,cols)][0].remove()
+                            self.al[(rows,cols)][1].remove()
+                            self.al[(rows,cols)] = [0,0]
+                    if self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] == True:
+                        self.plot(self.parent.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols], active=False)
+                        self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = False
+                        plotted = True
+            if plotted:
+                self.fig.tight_layout()
+                    
 
     def mouseMoveEvent(self, event):
         # translate into MPL coordinates
@@ -250,7 +272,10 @@ class MyMplCanvas(FigureCanvas):
 
     def mousePressEvent(self, event):
         if self.hoverAxes is not None:
+            #if self.parent.mpl_dict['Active'] is not None:
             self.parent.mpl_dict['Active'] = self.hoverAxes
+            # For some reason, doing this screws everything up.  Have to look into that.
+            #self.parent.mpl_dict['keyTree.Active'].setText(1, str(self.hoverAxes))
             self.update_figure()
             #self.activeAxes = self.hoverAxes
 
@@ -271,7 +296,6 @@ class MyMplCanvas(FigureCanvas):
         # Build a list of 4 random integers between 0 and 10 (both inclusive)
         # We call this whenever the dictionary is updated.
         self.updateFromDict()
-        self.returnAxesPos()
         #l = [np.random.randint(0, 10) for i in range(4)]
 
         #self.axes.plot([0, 1, 2, 3], l, 'r')
@@ -283,7 +307,6 @@ class MyMplCanvas(FigureCanvas):
         sns.set(font='sans-serif', style='ticks')
         sns.set_palette('deep')
         sns.despine()'''
-        self.fig.tight_layout()
         self.draw()
         FigureCanvas.updateGeometry(self)
 
@@ -335,6 +358,7 @@ class App(QWidget):
         self.height = 480
         self.fig_dict = '''{
                             'type': 'plot', 
+                            'Update': True,
                             }'''
         self.dset_dict = '''{
                             'color': -1,
@@ -347,6 +371,7 @@ class App(QWidget):
 
         self.mpl_dict_lit = '''{
                                 'FilesToLoad': 'IGNORE',
+                                'Update': True,
                                 'Active': 'None',
                                 'Rows': 2, 
                                 'Columns': 4,
@@ -644,6 +669,7 @@ class App(QWidget):
             #self.parent.mpl_dict['Figures'][str(key)]['data'][str(dkey)]['valTree.loc'].setText(0, str(location))
             key = self.parent.mpl_dict['Active']
             self.parent.mpl_dict['Figures'][str(key)]['data']['0']['loc'] = location
+            self.parent.mpl_dict['Figures'][str(key)]['Update'] = True
             self.parent.mpl_dict['Figures'][str(key)]['data']['0']['keyTree.loc'].setText(1, str(location))
             #self.parent.mpl_dict = copy.deepcopy(d)
 
@@ -691,12 +717,10 @@ class App(QWidget):
                     con = True
                 if con:
                     if 'keyTree.{}'.format(key) not in dict_data:
-                        print("A NEW KEY")
                         keyTree = QTreeWidgetItem(tree, [str(key)])
                         dict_data['keyTree.{}'.format(key)] = keyTree
                         self.treeItemKeyDict[str(keyTree)] = key_list + [str(key)]
                     else:
-                        print("NOT A NEW KEY")
                         keyTree = dict_data['keyTree.{}'.format(key)]
                         keyTree.setText(0, str(key))
                     if key == 'Figures':
@@ -747,7 +771,6 @@ class App(QWidget):
                             if self.editable:
                                 valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
             self.tree.setColumnCount(self.col)
-            print("DONE")
 
         def onItemChanged(self, test):
             # This works.
@@ -763,13 +786,11 @@ class App(QWidget):
                     if type(x.get(key)) == dict:
                         val = val.get(key)
                         x = x.get(key)
-                        print(key)
             else:
                 for key in self.treeItemKeyDict[str(test)]:
                     if type(x.get(key)) == dict:
                         val = val.get(key)
                         x = x.get(key)
-                        print(key)
             # Because we return the child widget, this is fine.
             # You can't have non list data, so enforce list type.
             # Well, that won't work for mpl stuff, so.
@@ -790,6 +811,12 @@ class App(QWidget):
             #print(dir(self.tree))
             if key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad' or oldkey == 'DSetDefaults' or oldkey == 'FigDefaults':
                 defaults = False
+                self.parent.mpl_dict['Update'] = True
+            print(key, oldkey)
+            keys = self.treeItemKeyDict[str(test)]
+            print(keys)
+            if keys[0] == 'Figures':
+                self.parent.mpl_dict['Figures'][str(keys[1])]['Update'] = True
             if self.function:
                 self.function(defaults)
             #if not defaults:
