@@ -644,7 +644,7 @@ class App(QWidget):
             #self.parent.mpl_dict['Figures'][str(key)]['data'][str(dkey)]['valTree.loc'].setText(0, str(location))
             key = self.parent.mpl_dict['Active']
             self.parent.mpl_dict['Figures'][str(key)]['data']['0']['loc'] = location
-            self.parent.mpl_dict['Figures'][str(key)]['data']['0']['valTree.loc'].setText(0, str(location))
+            self.parent.mpl_dict['Figures'][str(key)]['data']['0']['keyTree.loc'].setText(1, str(location))
             #self.parent.mpl_dict = copy.deepcopy(d)
 
             #tmp = self.parent.mpl_dict.get(['Figures'][key]['data'])
@@ -691,10 +691,12 @@ class App(QWidget):
                     con = True
                 if con:
                     if 'keyTree.{}'.format(key) not in dict_data:
+                        print("A NEW KEY")
                         keyTree = QTreeWidgetItem(tree, [str(key)])
                         dict_data['keyTree.{}'.format(key)] = keyTree
                         self.treeItemKeyDict[str(keyTree)] = key_list + [str(key)]
                     else:
+                        print("NOT A NEW KEY")
                         keyTree = dict_data['keyTree.{}'.format(key)]
                         keyTree.setText(0, str(key))
                     if key == 'Figures':
@@ -728,38 +730,15 @@ class App(QWidget):
                         # We want this to be like rows, not columns
                         if self.rows:
                             if type(val) == list:
-                                print("DO WE EVR FIRE.")
                                 for iv, v in enumerate(val):
-                                    if 'keyTree.{}'.format(key) not in dict_data:
-                                        pass
-                                        '''valTree = QTreeWidgetItem(keyTree, [str(v)])
-                                        self.treeItemKeyDict[str(valTree)] = key_list + [str(key)] + [iv]
-                                        if self.editable:
-                                            valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
-                                        dict_data['valTree.{}'.format(key)] = valTree'''
-                                    else:
-                                        '''valTree = dict_data['valTree.{}'.format(key)]'''
-                                        if self.editable:
-                                            keyTree.setFlags(keyTree.flags() | QtCore.Qt.ItemIsEditable)
-                                        keyTree.setText(iv+1, str(v))
-                                        self.col += iv
-                                #keyTree.setText(0, str(key))
-                            else:
-                                #if 'keyTree.{}'.format(key) not in dict_data:
-                                #    pass
-                                #    '''valTree = QTreeWidgetItem(keyTree, [str(val)])
-                                #    self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
-                                #    if self.editable:
-                                #        valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
-                                #    dict_data['valTree.{}'.format(key)] = valTree'''
-                                #else:
-                                if True:
-                                    print("FIRING")
-                                    #valTree = dict_data['valTree.{}'.format(key)]
                                     if self.editable:
                                         keyTree.setFlags(keyTree.flags() | QtCore.Qt.ItemIsEditable)
-                                    #keyTree.setText(0, str(key))
-                                    keyTree.setText(1, str(val))
+                                    keyTree.setText(iv+1, str(v))
+                                    self.col += iv
+                            else:
+                                if self.editable:
+                                    keyTree.setFlags(keyTree.flags() | QtCore.Qt.ItemIsEditable)
+                                keyTree.setText(1, str(val))
                         else:
                             del self.treeItemKeyDict[str(keyTree)]
                             del keyTree
@@ -768,6 +747,7 @@ class App(QWidget):
                             if self.editable:
                                 valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
             self.tree.setColumnCount(self.col)
+            print("DONE")
 
         def onItemChanged(self, test):
             # This works.
