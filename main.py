@@ -224,8 +224,10 @@ class MyMplCanvas(FigureCanvas):
                                 self.al[(rows,cols)][1].remove()
                             except:
                                 pass
-                        self.al[(rows,cols)][0] = self.axes[rows,cols].axhline(color="r", lw=4)
-                        self.al[(rows,cols)][1] = self.axes[rows,cols].axvline(color="r", lw=4)
+                        #self.al[(rows,cols)][0] = self.axes[rows,cols].axhline(color="r", lw=4)
+                        #self.al[(rows,cols)][1] = self.axes[rows,cols].axvline(color="r", lw=4)
+                        self.axes[rows,cols].spines['bottom'].set_color("r")
+                        self.axes[rows,cols].spines['left'].set_color("r")
                     else:
                         print("Not Active!")
                         if self.al[(rows,cols)][0] != 0 and self.al[(rows,cols)][1] != 0:
@@ -234,6 +236,8 @@ class MyMplCanvas(FigureCanvas):
                                 self.al[(rows,cols)][1].remove()
                             except:
                                 pass
+                        self.axes[rows,cols].spines['bottom'].set_color("black")
+                        self.axes[rows,cols].spines['left'].set_color("black")
                     if self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] == True:
                         self.axes[rows,cols].clear()
                         self.plot(self.parent.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols], active=False)
@@ -863,7 +867,7 @@ class App(QMainWindow):
             # TEST code
             #print("TESTING")
             #print(dir(self.tree))
-            if key == 'dpi' or key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad' or oldkey == 'DSetDefaults' or oldkey == 'FigDefaults':
+            if key == 'width' or key == 'height' or key == 'dpi' or key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad' or oldkey == 'DSetDefaults' or oldkey == 'FigDefaults':
                 defaults = False
                 self.parent.mpl_dict['Update'] = True
             print(key, oldkey)
