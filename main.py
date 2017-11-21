@@ -2,7 +2,7 @@
 
 # Stuff to get the window open.
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit, QMenu, QAction, QDockWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit, QMenu, QAction, QDockWidget, QMainWindow, QHBoxLayout
 from PyQt5.QtGui import QIcon, QCursor
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot
@@ -347,7 +347,7 @@ class MyMplCanvas(FigureCanvas):
         return data_loc
 
 
-class App(QWidget):
+class App(QMainWindow):
  
     def __init__(self):
         super().__init__()
@@ -417,15 +417,35 @@ class App(QWidget):
         self.dc = MyMplCanvas(self.main_widget, data_parent=self, width=10, height=8, dpi=100, data=kinetics, notify_func=self.notify)
         self.save_button = self.newButton(self, "Save", "Saves the Figure", (250,self.height-30), self.dc.save_figure, click_args=None)
         self.load_button = self.newButton(self, "Load Yaml", "Loads the Config", (250,self.height-30), self.dc.load_yaml, click_args=None)
-        self.dock = QDockWidget("Dockable", self)
         self.text = self.newTextBox(self, size=(0,0), pos=(self.save_button.button.width()+250, self.height-30), init_text="{}".format(kinetics))
         self.mplTree = self.newTree(self, self.mpl_dict, pos=(self.width-250,0), size=(250,self.height-30), col=1, function=self.updateFromDict, rows=True)
         self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText, function2=self.updateFromDict, get_figures=self.mplTree.getFigures, mpl=self.mpl_dict)
-        self.dock.setWidget(self.text.textBox)
+        # Do up some docks for everything!
+        self.setCentralWidget(self.main_widget)
+
+        self.mpldock = QDockWidget("Plotting Dictionary", self)
+        self.mpldock.setWidget(self.mplTree.tree)
+
+        self.datadock = QDockWidget("Dataset", self)
+        self.datadock.setWidget(self.dataTree.tree)
+
+        # Create the dock, create a new widget, create a layout for that widget, then add all the widgets into that widget, then add that widget to th dock.  Ha
+        self.textdock = QDockWidget("", self)
+        self.bwidget = QWidget(self)
+        self.blayout = QHBoxLayout(self.textdock)
+        self.blayout.addWidget(self.text.textBox)
+        self.blayout.addWidget(self.save_button.button)
+        self.blayout.addWidget(self.load_button.button)
+        self.bwidget.setLayout(self.blayout)
+        # Remove title bar.
+        self.textdock.setTitleBarWidget(QWidget())
+        self.textdock.setWidget(self.bwidget)
+
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.mpldock)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.datadock)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.textdock)
         # Try the scroll!
         self.scroll = QScrollArea(self.main_widget)
-        #self.scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        #self.scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.scroll.setWidgetResizable(False)
         scrollContent = QWidget(self.scroll)
 
@@ -435,9 +455,8 @@ class App(QWidget):
         self.scroll.setWidget(scrollContent)
         self.layout.addWidget(self.scroll)
 
-        #self.layout.addWidget(dc)
-        self.main_widget.move(250,0)
-        self.main_widget.setGeometry(250, 0, self.width-500, (self.height-25))
+        '''self.main_widget.move(250,0)
+        self.main_widget.setGeometry(250, 0, self.width-500, (self.height-25))'''
         self.main_widget.setLayout(self.layout)
         #button = self.newButton(self, "Button!", "Nothing", (100,70), self.button_test, click_args=None)
         testDict = {'0': ['0', '1'], '1': {'A': ['2'], 'B': ['3', '4']}}
@@ -560,15 +579,16 @@ class App(QWidget):
         if not firstrun:
             self.refreshWidgets()
 
-    def resizeEvent(self, event):
+    '''def resizeEvent(self, event):
         # size().height/width should do it.
         self.resizeAll(event.size().height, event.size().width)
-        pass
+        pass'''
 
     def resizeAll(self, height, width):
-        self.dataTree.tree.resize(self.dataTree.tree.width(), height()-30)
-        self.mplTree.tree.setGeometry(width()-250, 0, 250, height()-30)
-        self.main_widget.setGeometry(250, 0, width()-500, (height()-25))
+        #self.dataTree.tree.resize(self.dataTree.tree.width(), height()-30)
+        #self.mplTree.tree.setGeometry(width()-250, 0, 250, height()-30)
+        #self.main_widget.setGeometry(250, 0, width()-500, (height()-25))
+        self.main_widget.setGeometry(0, 0, width(), (height()-25))
         self.save_button.button.move(0,height()-30)
         self.load_button.button.move(self.save_button.button.width(),height()-30)
         self.text.textBox.setGeometry(self.save_button.button.width()+self.load_button.button.width(), height()-30, width()-self.save_button.button.width(), 30)
