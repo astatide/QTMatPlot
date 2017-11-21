@@ -2,7 +2,7 @@
 
 # Stuff to get the window open.
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit, QMenu, QAction
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit, QMenu, QAction, QDockWidget
 from PyQt5.QtGui import QIcon, QCursor
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot
@@ -417,10 +417,11 @@ class App(QWidget):
         self.dc = MyMplCanvas(self.main_widget, data_parent=self, width=10, height=8, dpi=100, data=kinetics, notify_func=self.notify)
         self.save_button = self.newButton(self, "Save", "Saves the Figure", (250,self.height-30), self.dc.save_figure, click_args=None)
         self.load_button = self.newButton(self, "Load Yaml", "Loads the Config", (250,self.height-30), self.dc.load_yaml, click_args=None)
+        self.dock = QDockWidget("Dockable", self)
         self.text = self.newTextBox(self, size=(0,0), pos=(self.save_button.button.width()+250, self.height-30), init_text="{}".format(kinetics))
         self.mplTree = self.newTree(self, self.mpl_dict, pos=(self.width-250,0), size=(250,self.height-30), col=1, function=self.updateFromDict, rows=True)
         self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText, function2=self.updateFromDict, get_figures=self.mplTree.getFigures, mpl=self.mpl_dict)
-
+        self.dock.setWidget(self.text.textBox)
         # Try the scroll!
         self.scroll = QScrollArea(self.main_widget)
         #self.scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
@@ -594,6 +595,9 @@ class App(QWidget):
             self.col = col+1
             self.pos = pos
             self.size = size
+            print(self.tree.setSizePolicy)
+            self.tree.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding)
+                #QSizePolicy.Expanding,
             #A = QTreeWidgetItem(self.tree, ["A"])
             self.data = data
             if size:
