@@ -60,10 +60,10 @@ class MyMplCanvas(FigureCanvas):
         self.activeAxes = None
         self.setParent(parent)
 
-        '''FigureCanvas.setSizePolicy(self,
-                QSizePolicy.Expanding,
-                QSizePolicy.Expanding)
-        FigureCanvas.updateGeometry(self)'''
+        FigureCanvas.setSizePolicy(self,
+                QSizePolicy.Fixed,
+                QSizePolicy.Fixed)
+        FigureCanvas.updateGeometry(self)
 
         #self.mpl_connect("scroll_event", self.scrolling)
         self.fig_dict = '''{
@@ -204,6 +204,9 @@ class MyMplCanvas(FigureCanvas):
                     self.al[(rows,cols)] = [0,0]
             self.fig.set_dpi(int(d['dpi']))
             self.fig.set_size_inches(float(d['figsize']['width']), float(d['figsize']['height']))
+            #print(dir(self))
+            #print(x)
+            FigureCanvas.updateGeometry(self)
             self.parent.mpl_dict['Update'] = False
         print(self.parent.mpl_dict['Update'])
         # We check to see if we need to update the figures.
@@ -251,9 +254,9 @@ class MyMplCanvas(FigureCanvas):
         #y = coord.y() / self.parent.mpl_dict['figsize']['height'] / self.parent.mpl_dict['dpi']
         x = coord.x()
         y = coord.y()
-        h = self.parent.mpl_dict['figsize']['height']
-        w = self.parent.mpl_dict['figsize']['width']
-        dpi = self.parent.mpl_dict['dpi']
+        h = float(self.parent.mpl_dict['figsize']['height'])
+        w = float(self.parent.mpl_dict['figsize']['width'])
+        dpi = float(self.parent.mpl_dict['dpi'])
         for box, i, j in self.returnAxesPos():
         #if True:
             #box, i, j = self.returnAxesPos()
@@ -466,7 +469,8 @@ class App(QMainWindow):
         self.addDockWidget(Qt.BottomDockWidgetArea, self.textdock)
         # Try the scroll!
         self.scroll = QScrollArea(self.main_widget)
-        self.scroll.setWidgetResizable(False)
+        #self.scroll.setWidgetResizable(False)
+        self.scroll.setWidgetResizable(True)
         scrollContent = QWidget(self.scroll)
 
         scrollLayout = QVBoxLayout(scrollContent)
@@ -859,7 +863,7 @@ class App(QMainWindow):
             # TEST code
             #print("TESTING")
             #print(dir(self.tree))
-            if key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad' or oldkey == 'DSetDefaults' or oldkey == 'FigDefaults':
+            if key == 'dpi' or key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad' or oldkey == 'DSetDefaults' or oldkey == 'FigDefaults':
                 defaults = False
                 self.parent.mpl_dict['Update'] = True
             print(key, oldkey)
