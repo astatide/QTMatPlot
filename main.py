@@ -131,6 +131,10 @@ class MyMplCanvas(FigureCanvas):
                     del subplot_kwargs['xlabel']
                     del subplot_kwargs['title']
                     del subplot_kwargs['ylabel']
+                    for k in subplot_kwargs.keys():
+                        if type(k) == str and len(k) >= 6:
+                            if k[0:7] == 'valTree' or k[0:7] == 'keyTree':
+                                del subplot_kwargs[k]
                     if subplot_kwargs['color'] == -1:
                         subplot_kwargs['color'] = self.parent.mpl_dict['Colors'][str(index)]
                     handle = ax.plot(self.translate_location(pd['data'][str(index)]['loc']), **subplot_kwargs)
@@ -141,14 +145,25 @@ class MyMplCanvas(FigureCanvas):
                     else:
                         pass
             if pd['type'] == 'shade':
-                try:
-                    subplot_kwargs = dict(pd['data'][str(index)])
+                #try:
+                if True:
+                    #subplot_kwargs = dict(pd['data'][str(index)])
+                    subplot_kwargs = {}
+                    for key,val in pd['data'][str(index)].items():
+                        if type(key) == str and len(key) >= 6:
+                            if key[0:7] != 'valTree' and key[0:7] != 'keyTree':
+                                if key[0:7] != 'valtree' and key[0:7] != 'keytree':
+                                    print(key,val)
+                                    subplot_kwargs[key] = val
+                        else:
+                            subplot_kwargs[key] = val
                     del subplot_kwargs['loc']
                     del subplot_kwargs['xlabel']
                     del subplot_kwargs['title']
                     del subplot_kwargs['ylabel']
+                    print(subplot_kwargs)
                     if subplot_kwargs['color'] == -1:
-                        subplot_kwargs['color'] = self.parent.mpl_dict['Colors'][index]
+                        subplot_kwargs['color'] = str(self.parent.mpl_dict['Colors'][index])
                     elif str(subplot_kwargs['color'])[0] == "#":
                         pass
                     else:
@@ -157,11 +172,11 @@ class MyMplCanvas(FigureCanvas):
                     subplot_kwargs['alpha'] = .3
                     handle = ax.fill_between(range(0, self.translate_location(pd['data'][str(index)]['loc'])['expected'].shape[0]), self.translate_location(pd['data'][str(index)]['loc'])['ci_ubound'][:], self.translate_location(pd['data'][str(index)]['loc'])['ci_lbound'][:], **subplot_kwargs)
                     return handle
-                except Exception as e:
+                '''except Exception as e:
                     if self.notify_func is not None:
                         self.notify_func(e)
                     else:
-                        pass
+                        pass'''
                 #self.axes
 
     def updateFromDict(self):
@@ -524,8 +539,8 @@ class App(QWidget):
             except:
                 pass
             #self.tree.clear()
-            if self.size:
-                self.tree.setGeometry(self.pos[0], self.pos[1], self.size[0], self.size[1])
+            #if self.size:
+            #    self.tree.setGeometry(self.pos[0], self.pos[1], self.size[0], self.size[1])
             if type(self.data) == dict:
                 self.handleDict(self.data, self.tree)
             self.tree.itemChanged.connect(self.onItemChanged)
@@ -586,19 +601,19 @@ class App(QWidget):
                         if self.rows:
                             if type(val) == list:
                                 for iv, v in enumerate(val):
-                                    if 'valTree.{}.{}'.format(key,iv) not in dict_data:
+                                    if 'valTree.{}'.format(key) not in dict_data:
                                         valTree = QTreeWidgetItem(keyTree, [str(v)])
                                         self.treeItemKeyDict[str(valTree)] = key_list + [str(key)] + [iv]
                                         if self.editable:
                                             valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
-                                        dict_data['valTree.{}.{}'.format(key,iv)] = valTree
+                                        dict_data['valTree.{}'.format(key)] = valTree
                             else:
-                                if 'valTree.{}.{}'.format(key,val) not in dict_data:
+                                if 'valTree.{}'.format(key) not in dict_data:
                                     valTree = QTreeWidgetItem(keyTree, [str(val)])
                                     self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
                                     if self.editable:
                                         valTree.setFlags(valTree.flags() | QtCore.Qt.ItemIsEditable)
-                                    dict_data['valTree.{}.{}'.format(key,val)] = valTree
+                                    dict_data['valTree.{}'.format(key)] = valTree
                         else:
                             del self.treeItemKeyDict[str(keyTree)]
                             del keyTree
@@ -646,8 +661,8 @@ class App(QWidget):
             # TEST code
             #print("TESTING")
             #print(dir(self.tree))
-            if key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad' or oldkey == 'DSetDefaults' or oldkey == 'FigDefaults':
-                defaults = False
+            #if key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad' or oldkey == 'DSetDefaults' or oldkey == 'FigDefaults':
+            #    defaults = False
             if self.function:
                 self.function(defaults)
             #if not defaults:
