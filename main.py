@@ -130,7 +130,6 @@ class MyMplCanvas(FigureCanvas):
                             subplot_kwargs[key] = val'''
                     subplot_kwargs = dict(pd['data'][str(index)])
                     subplot_kwargs = remove_trees(subplot_kwargs)
-                    print(subplot_kwargs)
                     del subplot_kwargs['loc']
                     del subplot_kwargs['range']
                     if subplot_kwargs['color'] == -1:
@@ -139,7 +138,6 @@ class MyMplCanvas(FigureCanvas):
                         pass
                     else:
                         subplot_kwargs['color'] = self.parent.mpl_dict['Colors'][int(subplot_kwargs['color'])]
-                    print(self.translate_location(pd['data'][str(index)]['loc'])['expected'][:])
                     ax.plot(self.translate_location(pd['data'][str(index)]['loc'])['expected'][:], **subplot_kwargs)
                     subplot_kwargs['alpha'] = .3
                     handle = ax.fill_between(range(0, self.translate_location(pd['data'][str(index)]['loc'])['expected'].shape[0]), self.translate_location(pd['data'][str(index)]['loc'])['ci_ubound'][:], self.translate_location(pd['data'][str(index)]['loc'])['ci_lbound'][:], **subplot_kwargs)
@@ -171,7 +169,6 @@ class MyMplCanvas(FigureCanvas):
             self.fig.set_dpi(int(d['dpi']))
             self.fig.set_size_inches(float(d['figsize']['width']), float(d['figsize']['height']))
             FigureCanvas.updateGeometry(self)
-        print(self.parent.mpl_dict['Update'])
         # We check to see if we need to update the figures.
         # This should just occur on a rebuild, so if we haven't added anything, don't worry about it.
         active = False
@@ -271,12 +268,8 @@ class MyMplCanvas(FigureCanvas):
         return data_loc
 
     def translate_location(self, location):
-        print("LOCATION TRANSLATIOJN")
         loc = self.data
-        print(self.data)
-        print(loc)
         for i in ast.literal_eval(location):
-            print(i)
             try:
                 # Is it a string?
                 loc = loc[i]
@@ -291,7 +284,6 @@ class MyMplCanvas(FigureCanvas):
                     #index = (slice(None, None, None), slice(t[0], t[1], None), slice(t[0], None, None))
                     index = (slice(None, None, None), slice(t[0], t[1], t[1]-t[0]), slice(t[1], None, t[1]-t[0]))
                 loc = loc[index]
-        print(loc)
         return loc.flatten()
 
 
@@ -348,7 +340,8 @@ class App(QMainWindow):
                                   6: '#a65628',
                                   7: '#f781bf'
                                  },
-                                'Figures': {}
+                                'Figures': {},
+                                'keyTree': {}
                                }'''
         self.mpl_dict = ast.literal_eval(self.mpl_dict_lit)
         self.mpl_dict['DSetDefaults'] = ast.literal_eval(self.dset_dict)
@@ -421,14 +414,12 @@ class App(QMainWindow):
     def save_figure(self):
         self.fig.savefig("test.pdf")
         save_dict = remove_trees(self.mpl_dict)
-        print(save_dict)
         with open('test.yml', 'w') as outfile:
             yaml.dump(save_dict, outfile, default_flow_style=False)
 
 
     def load_yaml(self):
         test = yaml.load(open('test.yml', 'r'))
-        print(test)
         if test != None:
             self.mpl_dict = copy.deepcopy(test)
             self.mpl_dict['Update'] = True
@@ -466,6 +457,7 @@ class App(QMainWindow):
 
     def updateFromDict(self, defaults=True, firstrun=False, updatedKeys=None):
         d = self.mpl_dict
+        print(updatedKeys)
         for rows in range(0, int(self.mpl_dict['Rows'])):
             for cols in range(0, int(self.mpl_dict['Columns'])):
                 if not defaults:
@@ -485,35 +477,16 @@ class App(QMainWindow):
                             new = False
                         tree_dict = {}
                         if not new:
-                            for key, val in self.mpl_dict['Figures'][str((rows,cols))].items():
-                                if type(key) == str and len(key) >= 6:
-                                    if key[0:7] == 'keyTree' and key[0:7] == 'valTree':
-                                        tree_dict[key] = val
+                            try:
+                                for key, val in self.mpl_dict['keyTree.Figures'][str((rows,cols))].items():
+                                    if type(key) == str and len(key) >= 6:
+                                        if key[0:7] == 'keyTree' and key[0:7] == 'valTree':
+                                            tree_dict[key] = val
+                            except:
+                                pass
                         self.mpl_dict['Figures'][str((rows,cols))] = copy.deepcopy(new_dict)
-                        self.mpl_dict['Figures'][str((rows,cols))].update(tree_dict)
-                else:
-                    # Here, we're updating from the defaults.
-                    new_dict = {}
-                    for key, val in self.mpl_dict['FigDefaults'].items():
-                        if type(key) == str and len(key) >= 6:
-                            if key[0:7] != 'keyTree' and key[0:7] != 'valTree':
-                                new_dict[key] = val
-                        else:
-                            new_dict[key] = val
-                    if str((rows,cols)) not in self.mpl_dict['Figures']:
-                        new = True
-                    else:
-                        new = False
-                    tree_dict = {}
-                    if not new:
-                        for key, val in self.mpl_dict['Figures'][str((rows,cols))].items():
-                            if type(key) == str and len(key) >= 6:
-                                if key[0:7] == 'keyTree' and key[0:7] == 'valTree':
-                                    tree_dict[key] = val
-                    self.mpl_dict['Figures'][str((rows,cols))] = copy.deepcopy(new_dict)
-                    self.mpl_dict['Figures'][str((rows,cols))].update(tree_dict)
-                for dset in range(0, int(self.mpl_dict['Datasets'])):
-                    if not defaults:
+                        #self.mpl_dict['Figures'][str((rows,cols))].update(tree_dict)
+                    for dset in range(0, int(self.mpl_dict['Datasets'])):
                         if str(dset) not in self.mpl_dict['Figures'][str((rows,cols))]['data']:
                             #self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = ast.literal_eval(self.dset_dict)
                             new_dict = {}
@@ -529,21 +502,83 @@ class App(QMainWindow):
                                 new = False
                             tree_dict = {}
                             if not new:
-                                for key, val in self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)].items():
-                                    if type(key) == str and len(key) >= 6:
-                                        if key[0:7] == 'keyTree' and key[0:7] == 'valTree':
-                                            tree_dict[key] = val
+                                try:
+                                    for key, val in self.mpl_dict['keyTree.Figures'][str((rows,cols))]['data'][str(dset)].items():
+                                        if type(key) == str and len(key) >= 6:
+                                            if key[0:7] == 'keyTree' and key[0:7] == 'valTree':
+                                                tree_dict[key] = val
+                                except:
+                                    pass
                             self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = copy.deepcopy(new_dict)
-                            self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)].update(tree_dict)
+                            #self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)].update(tree_dict)
+                # Here, we're updating the defaults.
+                else:
+                    # Here, we're updating from the defaults.
+                    new_dict = {}
+                    for key, val in self.mpl_dict['FigDefaults'].items():
+                        if type(key) == str and len(key) >= 6:
+                            if key[0:7] != 'keyTree' and key[0:7] != 'valTree':
+                                print(key)
+                                if updatedKeys == None:
+                                    # Just update everything.
+                                    new_dict[key] = val
+                                else:
+                                    for uKey in updatedKeys:
+                                        if key == uKey:
+                                            new_dict[key] = val
+                                        else:
+                                            new_dict[key] = copy.deepcopy(self.mpl_dict['Figures'][str((rows,cols))][key])
+                        else:
+                            print(key, val, "Whe", updatedKeys)
+                            if updatedKeys == None:
+                                new_dict[key] = val
+                            else:
+                                for uKey in updatedKeys:
+                                    if key == uKey:
+                                        new_dict[key] = val
+                                    else:
+                                        new_dict[key] = copy.deepcopy(self.mpl_dict['Figures'][str((rows,cols))][key])
+                    if str((rows,cols)) not in self.mpl_dict['Figures']:
+                        new = True
                     else:
+                        new = False
+                    tree_dict = {}
+                    if not new:
+                        #for key, val in self.mpl_dict['Figures'][str((rows,cols))].items():
+                        try:
+                            for key, val in self.mpl_dict['keyTree.Figures'][str((rows,cols))].items():
+                                if type(key) == str and len(key) >= 6:
+                                    if key[0:7] == 'keyTree' and key[0:7] == 'valTree':
+                                        tree_dict[key] = val
+                        except:
+                            pass
+                    #self.mpl_dict['Figures'][str((rows,cols))] = copy.deepcopy(new_dict)
+                    self.mpl_dict['Figures'][str((rows,cols))] = new_dict
+                    #self.mpl_dict['Figures'][str((rows,cols))].update(tree_dict)
+                    for dset in range(0, int(self.mpl_dict['Datasets'])):
                         #self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = copy.copy(self.mpl_dict['DSetDefaults'])
                         new_dict = {}
                         for key, val in self.mpl_dict['DSetDefaults'].items():
                             if type(key) == str and len(key) >= 6:
                                 if key[0:7] != 'keyTree' and key[0:7] != 'valTree':
-                                    new_dict[key] = val
+                                    if updatedKeys == None:
+                                        new_dict[key] = val
+                                    else:
+                                        for uKey in updatedKeys:
+                                            print(uKey, key)
+                                            if key == uKey:
+                                                new_dict[key] = val
+                                            else:
+                                                new_dict[key] = copy.deepcopy(self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)][key])
                             else:
-                                new_dict[key] = val
+                                if updatedKeys == None:
+                                    new_dict[key] = val
+                                else:
+                                    for uKey in updatedKeys:
+                                        if key == uKey:
+                                            new_dict[key] = val
+                                        else:
+                                            new_dict[key] = copy.deepcopy(self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)][key])
                         # We don't really want to create new keys, so.
                         if str(dset) not in self.mpl_dict['Figures'][str((rows,cols))]['data']:
                             new = True
@@ -551,12 +586,16 @@ class App(QMainWindow):
                             new = False
                         tree_dict = {}
                         if not new:
-                            for key, val in self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)].items():
-                                if type(key) == str and len(key) >= 6:
-                                    if key[0:7] == 'keyTree' and key[0:7] == 'valTree':
-                                        tree_dict[key] = val
-                        self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = copy.deepcopy(new_dict)
-                        self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)].update(tree_dict)
+                            try:
+                                for key, val in self.mpl_dict['keyTree']['Figures'][str((rows,cols))]['data'][str(dset)].items():
+                                    if type(key) == str and len(key) >= 6:
+                                        if key[0:7] == 'keyTree' and key[0:7] == 'valTree':
+                                            tree_dict[key] = val
+                            except:
+                                pass
+                        #self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = copy.deepcopy(new_dict)
+                        self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = new_dict
+                        #self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)].update(tree_dict)
 
                 # Throw in the axes object.
                 #print(self.mpl_dict['Figures'][(rows,cols)])
@@ -600,11 +639,11 @@ class App(QMainWindow):
             self.col = col+1
             self.pos = pos
             self.size = size
-            print(self.tree.setSizePolicy)
             self.tree.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding)
                 #QSizePolicy.Expanding,
             #A = QTreeWidgetItem(self.tree, ["A"])
             self.data = data
+            self.data['keyTree'] = {}
             if size:
                 self.tree.setGeometry(pos[0], pos[1], size[0], size[1])
             if mpl:
@@ -624,9 +663,9 @@ class App(QMainWindow):
                 self.tree.clicked.connect(self.onClicked)
             self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
             self.tree.customContextMenuRequested.connect(self.contextMenuEvent)
+            print(self.data['keyTree'])
 
         def contextMenuEvent(self, event):
-            print("NEW EVENT")
             # Just get the horizontal value; we want anything in this row.
             horizontal = event
             horizontal.setX(0)
@@ -679,7 +718,9 @@ class App(QMainWindow):
             key = self.parent.mpl_dict['Active']
             self.parent.mpl_dict['Figures'][str(key)]['data']['0']['loc'] = location
             self.parent.mpl_dict['Figures'][str(key)]['Update'] = True
-            self.parent.mpl_dict['Figures'][str(key)]['data']['0']['keyTree.loc'].setText(1, str(location))
+            print("GOING NOW!")
+            print(self.parent.mpl_dict['keyTree'])
+            self.parent.mpl_dict['keyTree']['Figures'][str(key)]['data']['0']['keyTree.loc'].setText(1, str(location))
             #self.parent.mpl_dict = copy.deepcopy(d)
 
             #tmp = self.parent.mpl_dict.get(['Figures'][key]['data'])
@@ -700,13 +741,14 @@ class App(QMainWindow):
             if type(self.data) == dict:
                 if new:
                     self.tree.clear()
-                self.handleDict(self.data, self.tree, new=new)
+                print(self.data)
+                self.handleDict(self.data, self.tree, tree_dict=self.data['keyTree'], new=new)
             self.tree.itemChanged.connect(self.onItemChanged)
 
         def getFigures(self):
             return self.figures
 
-        def handleDict(self, dict_data, tree, key_list=[], new=False):
+        def handleDict(self, dict_data, tree, key_list=[], tree_dict={},new=False):
             # We can actually have numerous structures, here.
             # Why not keep track of it, for now?
             # We want to do a reverse lookup
@@ -721,18 +763,18 @@ class App(QMainWindow):
                 else:
                     con = True
                 if con:
-                    if 'keyTree.{}'.format(key) not in dict_data or new:
-                        print(key, dict_data)
+                    if 'keyTree.{}'.format(key) not in tree_dict or new:
                         keyTree = QTreeWidgetItem(tree, [str(key)])
-                        dict_data['keyTree.{}'.format(key)] = keyTree
+                        tree_dict['keyTree.{}'.format(key)] = keyTree
                         self.treeItemKeyDict[str(keyTree)] = key_list + [str(key)]
                     else:
-                        keyTree = dict_data['keyTree.{}'.format(key)]
+                        keyTree = tree_dict['keyTree.{}'.format(key)]
                         keyTree.setText(0, str(key))
                     if key == 'Figures':
                         self.figures = keyTree
                     if type(val) == dict:
-                        self.handleDict(val, keyTree, key_list + [str(key)], new=new)
+                        tree_dict[key] = {}
+                        self.handleDict(val, keyTree, key_list + [str(key)], new=new, tree_dict=tree_dict[key])
                     elif type(val) == h5py._hl.dataset.Dataset:
                         # Let's handle 2 and 3 dimensional data for now.  Anything more than that and it just... well, it won't plot anyway.
                         # I know this shouldn't go into the handlDict function, but hey.  At least rename it.
@@ -759,7 +801,8 @@ class App(QMainWindow):
                                     else:
                                         sdict[(i,j)] = str(val.shape)
                                         #self.handleDict({ val.name : str(val.shape) }, keyTree, key_list + [str(key)], new=new)
-                        self.handleDict(sdict, keyTree, key_list + [str(key)], new=new)
+                        tree_dict[key] = {}
+                        self.handleDict(sdict, keyTree, key_list + [str(key)], new=new, tree_dict=tree_dict[key])
                     else:
                         # We want this to be like rows, not columns
                         if self.rows:
@@ -811,13 +854,18 @@ class App(QMainWindow):
             except:
                 oldkey = self.treeItemKeyDict[str(test)][-1]
             defaults = False
+            updatedKeys = None
             # TEST code
             #print("TESTING")
             #print(dir(self.tree))
-            if  key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad' or oldkey == 'DSetDefaults' or oldkey == 'FigDefaults':
+            if  key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad':
                 defaults = True
                 self.parent.mpl_dict['Update'] = True
-            print(key, oldkey)
+            if  oldkey == 'DSetDefaults' or oldkey == 'FigDefaults':
+                defaults = True
+                self.parent.mpl_dict['Update'] = True
+                updatedKeys = [key]
+            print(key, oldkey, updatedKeys)
             keys = self.treeItemKeyDict[str(test)]
             print(keys)
             if key == 'width' or key == 'height' or key == 'dpi':
@@ -825,7 +873,8 @@ class App(QMainWindow):
             if keys[0] == 'Figures':
                 self.parent.mpl_dict['Figures'][str(keys[1])]['Update'] = True
             if self.function:
-                self.function(defaults)
+                print(updatedKeys, self.function)
+                self.function(defaults=defaults, updatedKeys=updatedKeys)
             #if not defaults:
             #    self.tree.itemChanged.disconnect()
             #    self.tree.clear()
