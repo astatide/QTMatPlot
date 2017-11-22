@@ -478,23 +478,24 @@ class App(QMainWindow):
                     new_dict = {}
                     for key, val in self.mpl_dict['FigDefaults'].items():
                         if updatedKeys == None:
-                            new_dict[key] = val
+                            new_dict[key] = copy.deepcopy(val)
                         else:
                             for uKey in updatedKeys:
                                 if key == uKey:
-                                    new_dict[key] = val
+                                    new_dict[key] = copy.deepcopy(val)
                                 else:
                                     new_dict[key] = copy.deepcopy(self.mpl_dict['Figures'][str((rows,cols))][key])
                     self.mpl_dict['Figures'][str((rows,cols))] = new_dict
+                    self.mpl_dict['Figures'][str((rows,cols))]['Update'] = True
                     for dset in range(0, int(self.mpl_dict['Datasets'])):
                         new_dict = {}
                         for key, val in self.mpl_dict['DSetDefaults'].items():
                             if updatedKeys == None:
-                                new_dict[key] = val
+                                new_dict[key] = copy.deepcopy(val)
                             else:
                                 for uKey in updatedKeys:
                                     if key == uKey:
-                                        new_dict[key] = val
+                                        new_dict[key] = copy.deepcopy(val)
                                     else:
                                         new_dict[key] = copy.deepcopy(self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)][key])
                         # We don't really want to create new keys, so.
