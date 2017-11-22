@@ -211,30 +211,45 @@ class MyMplCanvas(FigureCanvas):
         pass
 
     def update_figure(self, defaults=True):
-        # Build a list of 4 random integers between 0 and 10 (both inclusive)
-        # We call this whenever the dictionary is updated.
         self.updateFromDict()
-        #l = [np.random.randint(0, 10) for i in range(4)]
-
-        #self.axes.plot([0, 1, 2, 3], l, 'r')
-        '''sns.set_style('ticks')
-        sns.set_context('paper')
-        sns.axes_style({'font.family': ['monospace'],
-                        'font.sans-serif': ['monospace']
-                        })
-        sns.set(font='sans-serif', style='ticks')
-        sns.set_palette('deep')
-        sns.despine()'''
         self.draw()
-        FigureCanvas.updateGeometry(self)
 
     def save_figure(self):
         self.fig.savefig("test.pdf")
+        '''save_dict = {}
+        for key,val in self.parent.mpl_dict.items():
+            if type(key) == str and len(key) >= 6:
+                if key[0:7] != 'valTree' and key[0:7] != 'keyTree':
+                    if key[0:7] != 'valtree' and key[0:7] != 'keytree':
+                        save_dict[key] = copy.deepcopy(val)
+            else:
+                save_dict[key] = copy.deepcopy(val)'''
+        save_dict = self.remove_trees(self.parent.mpl_dict)
+        print(save_dict)
         with open('test.yml', 'w') as outfile:
-            yaml.dump(self.parent.mpl_dict, outfile, default_flow_style=False)
+            yaml.dump(save_dict, outfile, default_flow_style=False)
+
+    def remove_trees(self, idict, odict=None):
+        if odict == None:
+            odict = {}
+        for key, val in idict.items():
+            if type(key) == str and len(key) >= 6:
+                if key[0:7] != 'valTree' and key[0:7] != 'keyTree' and key != 'Update':
+                    if type(val) == dict:
+                        odict[key] = copy.deepcopy(self.remove_trees(val))
+                    else:
+                        odict[key] = copy.deepcopy(val)
+            else:
+                if type(val) == dict:
+                    odict[key] = copy.deepcopy(self.remove_trees(val))
+                else:
+                    odict[key] = copy.deepcopy(val)
+        return odict
+
 
     def load_yaml(self):
         test = yaml.load(open('test.yml', 'r'))
+        print(test)
         if test != None:
             self.parent.mpl_dict = test
             self.update_figure()
