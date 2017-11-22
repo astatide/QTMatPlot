@@ -139,6 +139,7 @@ class MyMplCanvas(FigureCanvas):
                         pass
                     else:
                         subplot_kwargs['color'] = self.parent.mpl_dict['Colors'][int(subplot_kwargs['color'])]
+                    print(self.translate_location(pd['data'][str(index)]['loc'])['expected'][:])
                     ax.plot(self.translate_location(pd['data'][str(index)]['loc'])['expected'][:], **subplot_kwargs)
                     subplot_kwargs['alpha'] = .3
                     handle = ax.fill_between(range(0, self.translate_location(pd['data'][str(index)]['loc'])['expected'].shape[0]), self.translate_location(pd['data'][str(index)]['loc'])['ci_ubound'][:], self.translate_location(pd['data'][str(index)]['loc'])['ci_lbound'][:], **subplot_kwargs)
@@ -238,7 +239,7 @@ class MyMplCanvas(FigureCanvas):
         FigureCanvas.updateGeometry(self)
         self.draw()
 
-    def translate_location(self, location):
+    def translate_location_old(self, location):
         data_loc = None
         try:
             location = ast.literal_eval(location)
@@ -263,6 +264,30 @@ class MyMplCanvas(FigureCanvas):
                 data_loc = self.data[location[0]][:,int(location[1]), int(location[2])][location[3]]
         return data_loc
 
+    def translate_location(self, location):
+        print("LOCATION TRANSLATIOJN")
+        loc = self.data
+        print(self.data)
+        print(loc)
+        for i in ast.literal_eval(location):
+            print(i)
+            try:
+                # Is it a string?
+                loc = loc[i]
+            except:
+                # Definitely a tuple.
+                t = ast.literal_eval(i)
+                # Some complicated slicing, here.
+                if t[0] > t[1]:
+                    #index = (slice(None, None, None), slice(t[0], None, None), slice(t[0], t[1], None))
+                    index = (slice(None, None, None), slice(t[0], None, t[0]-t[1]), slice(t[1], t[0], t[0]-t[1]))
+                else:
+                    #index = (slice(None, None, None), slice(t[0], t[1], None), slice(t[0], None, None))
+                    index = (slice(None, None, None), slice(t[0], t[1], t[1]-t[0]), slice(t[1], None, t[1]-t[0]))
+                loc = loc[index]
+        print(loc)
+        return loc.flatten()
+
 
 class App(QMainWindow):
  
@@ -274,7 +299,7 @@ class App(QMainWindow):
         self.width = 640
         self.height = 480
         self.fig_dict = '''{
-                            'type': 'plot', 
+                            'type': 'shade', 
                             'Update': True,
                             'ylabel': '',
                             'xlabel': '',
@@ -332,12 +357,12 @@ class App(QMainWindow):
         self.layout = QVBoxLayout(self.main_widget)
         kinetics = h5py.File('direct.h5', 'r')
         self.updateFromDict(True, firstrun=True)
-        self.dc = MyMplCanvas(self.main_widget, data_parent=self, width=10, height=8, dpi=100, data=kinetics, notify_func=self.notify)
+        self.dc = MyMplCanvas(self.main_widget, data_parent=self, width=10, height=8, dpi=100, data={'direct.h5': kinetics}, notify_func=self.notify)
         self.save_button = self.newButton(self, "Save", "Saves the Figure", (250,self.height-30), self.save_figure, click_args=None)
         self.load_button = self.newButton(self, "Load Yaml", "Loads the Config", (250,self.height-30), self.load_yaml, click_args=None)
         self.text = self.newTextBox(self, size=(0,0), pos=(self.save_button.button.width()+250, self.height-30), init_text="{}".format(kinetics))
         self.mplTree = self.newTree(self, self.mpl_dict, pos=(self.width-250,0), size=(250,self.height-30), col=1, function=self.updateFromDict, rows=True)
-        self.dataTree = self.newTree(self, dict(kinetics), pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText, function2=self.updateFromDict, get_figures=self.mplTree.getFigures, mpl=self.mpl_dict)
+        self.dataTree = self.newTree(self, {'direct.h5': dict(kinetics)}, pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText, function2=self.updateFromDict, get_figures=self.mplTree.getFigures, mpl=self.mpl_dict)
         # Do up some docks for everything!
         self.setCentralWidget(self.main_widget)
 
@@ -699,15 +724,33 @@ class App(QMainWindow):
                     if type(val) == dict:
                         self.handleDict(val, keyTree, key_list + [str(key)], new=new)
                     elif type(val) == h5py._hl.dataset.Dataset:
-                        if val.dtype.names is not None:
-                            sdict = {}
-                            for iv, v in enumerate(val.dtype.names):
-                                # Why the fuck is this so slow?
-                                sdict[v] = str(val.shape)
-                            self.handleDict({ val.name : sdict }, keyTree, key_list + [str(key)], new=new)
-                        else:
-                            self.handleDict({ val.name : str(val.shape) }, keyTree, key_list + [str(key)], new=new)
-                    if True:
+                        # Let's handle 2 and 3 dimensional data for now.  Anything more than that and it just... well, it won't plot anyway.
+                        # I know this shouldn't go into the handlDict function, but hey.  At least rename it.
+                        sdict = {}
+                        if len(val.shape) == 2:
+                            # Assume time is the first dimension.
+                            for i in range(0, val.shape[1]):
+                                if val.dtype.names is not None:
+                                    sdict[i] = {}
+                                    for iv, v in enumerate(val.dtype.names):
+                                        # Why the fuck is this so slow?
+                                        sdict[i][v] = { str(val.shape) }
+                                else:
+                                    sdict[i] = { str(val.shape) } 
+                        if len(val.shape) == 3:
+                            # Assume time is the first dimension.
+                            for i in range(0, val.shape[1]):
+                                for j in range(0, val.shape[2]):
+                                    if val.dtype.names is not None:
+                                        sdict[(i,j)] = {}
+                                        for iv, v in enumerate(val.dtype.names):
+                                            # Why the fuck is this so slow?
+                                            sdict[(i,j)][v] = { str(val.shape) }
+                                    else:
+                                        sdict[(i,j)] = { str(val.shape) } 
+                                        #self.handleDict({ val.name : str(val.shape) }, keyTree, key_list + [str(key)], new=new)
+                        self.handleDict(sdict, keyTree, key_list + [str(key)], new=new)
+                    else:
                         # We want this to be like rows, not columns
                         if self.rows:
                             if type(val) == list:
@@ -722,25 +765,6 @@ class App(QMainWindow):
                                 if key == 'dpi':
                                     print(str(val))
                                 keyTree.setText(1, str(val))
-                    '''elif type(val) == h5py._hl.dataset.Dataset:
-                        if len(val.shape) == 1:
-                            # Here, we don't want to display everything in the list.  Just... let it be.
-                            #valTree = QTreeWidgetItem(keyTree, [str(val)])
-                            #self.treeItemKeyDict[str(valTree)] = key_list + [str(key)]
-                            if hasattr(val, 'dtype'):
-                                if len(val.dtype) > 1:
-                                    for iv in range(0, len(val.dtype)):
-                                        keyTree.setText(iv+1, str(val.dtype.names[iv]))
-                        elif len(val.shape) > 1:
-                            for n in range(1, len(val.shape)):
-                                for i in range(0, n):
-                                    for j in range(0, n):
-                                        if i != j:
-                                            if hasattr(val, 'dtype'):
-                                                if len(val.dtype) > 1:
-                                                    for iv in range(0, len(val.dtype.names)):
-                                                        #self.handleDict({str((i,j)): list(val.dtype.names)}, keyTree, key_list + [str(key)], new=new)
-                                                        self.handleDict({str((i,j)): val.dtype.names[iv]}, keyTree, key_list + [str(key)], new=new)'''
             self.tree.setColumnCount(self.col)
 
         def onItemChanged(self, test):
