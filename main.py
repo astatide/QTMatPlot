@@ -70,27 +70,21 @@ class MyMplCanvas(FigureCanvas):
         ##timer.timeout.connect(self.update_figure)
         ##timer.start(1000)
 
-    def plot(self, pd, index, ax, active=False):
+    def plot(self, pd, index, ax):
         # pd is the plot dictionary
         ax.tick_params(axis='both', labelsize=float(self.parent.mpl_dict['fontsize']['fontsize']), length=self.parent.mpl_dict['fontsize']['ticksize'])
-        if active:
-            ax.axhline(color="r", lw=4)
-            ax.axvline(color="r", lw=4)
-        sk = dict(pd['data'][str(index)])
-        if sk['ylabel'] is not None:
-            ax.set_ylabel(sk['ylabel'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
-        if sk['xlabel'] is not None:
-            ax.set_xlabel(sk['xlabel'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
-        if sk['title'] is not None:
-            ax.set_title(sk['title'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
+        if pd['ylabel'] is not None:
+            ax.set_ylabel(pd['ylabel'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
+        if pd['xlabel'] is not None:
+            ax.set_xlabel(pd['xlabel'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
+        if pd['title'] is not None:
+            ax.set_title(pd['title'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
         if pd['data'][str(index)]['loc'] != 'None':
             if pd['type'] == 'plot':
                 try:
                     subplot_kwargs = dict(pd['data'][str(index)])
                     del subplot_kwargs['loc']
-                    del subplot_kwargs['xlabel']
-                    del subplot_kwargs['title']
-                    del subplot_kwargs['ylabel']
+                    del subplot_kwargs['range']
                     for k in subplot_kwargs.keys():
                         if type(k) == str and len(k) >= 6:
                             if k[0:7] == 'valTree' or k[0:7] == 'keyTree':
@@ -115,11 +109,9 @@ class MyMplCanvas(FigureCanvas):
                                     subplot_kwargs[key] = val
                         else:
                             subplot_kwargs[key] = val
-                    del subplot_kwargs['loc']
-                    del subplot_kwargs['xlabel']
-                    del subplot_kwargs['title']
-                    del subplot_kwargs['ylabel']
                     print(subplot_kwargs)
+                    del subplot_kwargs['loc']
+                    del subplot_kwargs['range']
                     if subplot_kwargs['color'] == -1:
                         subplot_kwargs['color'] = str(self.parent.mpl_dict['Colors'][index])
                     elif str(subplot_kwargs['color'])[0] == "#":
@@ -149,8 +141,6 @@ class MyMplCanvas(FigureCanvas):
                     self.al[(rows,cols)] = [0,0]
             self.fig.set_dpi(int(d['dpi']))
             self.fig.set_size_inches(float(d['figsize']['width']), float(d['figsize']['height']))
-            #print(dir(self))
-            #print(x)
             FigureCanvas.updateGeometry(self)
             self.parent.mpl_dict['Update'] = False
         print(self.parent.mpl_dict['Update'])
@@ -163,29 +153,14 @@ class MyMplCanvas(FigureCanvas):
                 # Throw in the axes object.
                 for dset in range(0, int(self.parent.mpl_dict['Datasets'])):
                     if self.parent.mpl_dict['Active'] == str((rows,cols)):
-                        if self.al[(rows,cols)][0] != 0 and self.al[(rows,cols)][1] != 0:
-                            try:
-                                self.al[(rows,cols)][0].remove()
-                                self.al[(rows,cols)][1].remove()
-                            except:
-                                pass
-                        #self.al[(rows,cols)][0] = self.axes[rows,cols].axhline(color="r", lw=4)
-                        #self.al[(rows,cols)][1] = self.axes[rows,cols].axvline(color="r", lw=4)
                         self.axes[rows,cols].spines['bottom'].set_color("r")
                         self.axes[rows,cols].spines['left'].set_color("r")
                     else:
-                        print("Not Active!")
-                        if self.al[(rows,cols)][0] != 0 and self.al[(rows,cols)][1] != 0:
-                            try:
-                                self.al[(rows,cols)][0].remove()
-                                self.al[(rows,cols)][1].remove()
-                            except:
-                                pass
                         self.axes[rows,cols].spines['bottom'].set_color("black")
                         self.axes[rows,cols].spines['left'].set_color("black")
                     if self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] == True:
                         self.axes[rows,cols].clear()
-                        self.plot(self.parent.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols], active=False)
+                        self.plot(self.parent.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols])
                         self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = False
                         plotted = True
             if plotted:
@@ -195,58 +170,32 @@ class MyMplCanvas(FigureCanvas):
     def mouseMoveEvent(self, event):
         # translate into MPL coordinates
         coord = event.pos()
-        #x = coord.x() / self.parent.mpl_dict['dpi'] / 10
-        #y = coord.y() / self.parent.mpl_dict['dpi'] / 10
-        #x = coord.x() / 2 / 1000
-        #y = coord.y() / 2 / 1000
-        #x = coord.x() / self.parent.mpl_dict['figsize']['width'] / self.parent.mpl_dict['dpi']
-        #y = coord.y() / self.parent.mpl_dict['figsize']['height'] / self.parent.mpl_dict['dpi']
         x = coord.x()
         y = coord.y()
         h = float(self.parent.mpl_dict['figsize']['height'])
         w = float(self.parent.mpl_dict['figsize']['width'])
         dpi = float(self.parent.mpl_dict['dpi'])
         for box, i, j in self.returnAxesPos():
-        #if True:
-            #box, i, j = self.returnAxesPos()
             pnts = box.get_points()
             # pnts: [[x0, y0], [x1, y1]]
-            # BUT: in matplotlib, y1 is the lower, and y0 is the upper
-            # We probably need to transform these based on the figure height, as well.
-            #x1 = pnts[0,0] * self.parent.mpl_dict['dpi']
-            #x2 = pnts[1,0] * self.parent.mpl_dict['dpi']
-            #y1 = pnts[0,1] * self.parent.mpl_dict['dpi']
-            #y2 = pnts[1,1] * self.parent.mpl_dict['dpi']
             x1 = pnts[0,0]
             x2 = pnts[1,0]
             y1 = pnts[0,1]
             y2 = pnts[1,1]
-            #print([[x1, y2], [x2, y1]], x, y)
             # THIS is the correct transformation.
             #print([[x1, (h*dpi)-y2], [x2, (h*dpi)-y1]], x, y)
-            #print([[x1*dpi, -1*((h/dpi)-y1)*dpi], [x2*dpi, -1*((h/dpi)-y2)*dpi]], x, y)
-            #print([[coord.x()/x1, coord.y()/y1], [coord.x()/x2, coord.y()/y2]], x, y)
 
             if x > x1 and x < x2 and y > (h*dpi)-y2 and y < (h*dpi)-y1:
-                #print("In box {} at pos {},{}!".format(self.axes[i,j], i, j))
                 self.hoverAxes = str((i,j))
-                #print([[x1, (h*dpi)-y2], [x2, (h*dpi)-y1]], x, y, i, j)
-        #print(self.returnAxesPos())
 
     def mousePressEvent(self, event):
         if self.hoverAxes is not None:
-            #if self.parent.mpl_dict['Active'] is not None:
             self.parent.mpl_dict['Active'] = self.hoverAxes
             # For some reason, doing this screws everything up.  Have to look into that.
             #self.parent.mpl_dict['keyTree.Active'].setText(1, str(self.hoverAxes))
             #self.activeAxes = self.hoverAxes
             FigureCanvas.mousePressEvent(self, event)
             self.update_figure()
-
-    '''def wheelEvent(self, event):
-        print(dir(event))
-        self.parent.mpl_dict['dpi'] *= event.pixelDelta().x()
-        self.update_figure()'''
 
     def returnAxesPos(self):
         return_list = []
@@ -328,14 +277,15 @@ class App(QMainWindow):
         self.fig_dict = '''{
                             'type': 'plot', 
                             'Update': True,
-                            }'''
-        self.dset_dict = '''{
-                            'color': -1,
-                            'alpha': 1, 
-                            'loc': 'None',
                             'ylabel': '',
                             'xlabel': '',
                             'title': ''
+                            }'''
+        self.dset_dict = '''{
+                            'loc': 'None',
+                            'range': 'None',
+                            'color': -1,
+                            'alpha': 1, 
                             }'''
 
         self.mpl_dict_lit = '''{
