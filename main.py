@@ -155,6 +155,7 @@ class MyMplCanvas(FigureCanvas):
         d = self.parent.mpl_dict
         # Clears the figure before we plot more.
         if self.parent.mpl_dict['Update'] == True:
+            # This means that we're updating from the defaults.
             self.fig.clear()
             self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']))
             self.al = {}
@@ -165,6 +166,11 @@ class MyMplCanvas(FigureCanvas):
             self.fig.set_size_inches(float(d['figsize']['width']), float(d['figsize']['height']))
             FigureCanvas.updateGeometry(self)
             self.parent.mpl_dict['Update'] = False
+        if self.parent.mpl_dict['Resize'] == True:
+            self.parent.mpl_dict['Resize'] = False
+            self.fig.set_dpi(int(d['dpi']))
+            self.fig.set_size_inches(float(d['figsize']['width']), float(d['figsize']['height']))
+            FigureCanvas.updateGeometry(self)
         print(self.parent.mpl_dict['Update'])
         # We check to see if we need to update the figures.
         # This should just occur on a rebuild, so if we haven't added anything, don't worry about it.
@@ -315,6 +321,7 @@ class App(QMainWindow):
         self.mpl_dict_lit = '''{
                                 'FilesToLoad': 'IGNORE',
                                 'Update': True,
+                                'Resize': True,
                                 'Active': 'None',
                                 'Rows': 2, 
                                 'Columns': 4,
@@ -452,11 +459,12 @@ class App(QMainWindow):
             self.dataTree.tree.clear()'''
         self.mplTree.updateTree(new)
         # Well, it no longer seems to die, but.
-        self.dataTree.updateTree(new)
+        # If we want to update this, we're going to have to call a clear function.
+        #self.dataTree.updateTree(new)
         self.dc.update_figure()
         #pass
 
-    def updateFromDict(self, defaults=True, firstrun=False):
+    def updateFromDict(self, defaults=True, firstrun=False, updatedKeys=None):
         d = self.mpl_dict
         for rows in range(0, int(self.mpl_dict['Rows'])):
             for cols in range(0, int(self.mpl_dict['Columns'])):
@@ -484,6 +492,7 @@ class App(QMainWindow):
                         self.mpl_dict['Figures'][str((rows,cols))] = copy.deepcopy(new_dict)
                         self.mpl_dict['Figures'][str((rows,cols))].update(tree_dict)
                 else:
+                    # Here, we're updating from the defaults.
                     new_dict = {}
                     for key, val in self.mpl_dict['FigDefaults'].items():
                         if type(key) == str and len(key) >= 6:
@@ -713,6 +722,7 @@ class App(QMainWindow):
                     con = True
                 if con:
                     if 'keyTree.{}'.format(key) not in dict_data or new:
+                        print(key, dict_data)
                         keyTree = QTreeWidgetItem(tree, [str(key)])
                         dict_data['keyTree.{}'.format(key)] = keyTree
                         self.treeItemKeyDict[str(keyTree)] = key_list + [str(key)]
@@ -734,9 +744,9 @@ class App(QMainWindow):
                                     sdict[i] = {}
                                     for iv, v in enumerate(val.dtype.names):
                                         # Why the fuck is this so slow?
-                                        sdict[i][v] = { str(val.shape) }
+                                        sdict[i][v] = str(val.shape)
                                 else:
-                                    sdict[i] = { str(val.shape) } 
+                                    sdict[i] = str(val.shape)
                         if len(val.shape) == 3:
                             # Assume time is the first dimension.
                             for i in range(0, val.shape[1]):
@@ -745,9 +755,9 @@ class App(QMainWindow):
                                         sdict[(i,j)] = {}
                                         for iv, v in enumerate(val.dtype.names):
                                             # Why the fuck is this so slow?
-                                            sdict[(i,j)][v] = { str(val.shape) }
+                                            sdict[(i,j)][v] = str(val.shape)
                                     else:
-                                        sdict[(i,j)] = { str(val.shape) } 
+                                        sdict[(i,j)] = str(val.shape)
                                         #self.handleDict({ val.name : str(val.shape) }, keyTree, key_list + [str(key)], new=new)
                         self.handleDict(sdict, keyTree, key_list + [str(key)], new=new)
                     else:
@@ -804,12 +814,14 @@ class App(QMainWindow):
             # TEST code
             #print("TESTING")
             #print(dir(self.tree))
-            if key == 'width' or key == 'height' or key == 'dpi' or key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad' or oldkey == 'DSetDefaults' or oldkey == 'FigDefaults':
+            if  key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad' or oldkey == 'DSetDefaults' or oldkey == 'FigDefaults':
                 defaults = True
                 self.parent.mpl_dict['Update'] = True
             print(key, oldkey)
             keys = self.treeItemKeyDict[str(test)]
             print(keys)
+            if key == 'width' or key == 'height' or key == 'dpi':
+                self.parent.mpl_dict['Resize'] = True
             if keys[0] == 'Figures':
                 self.parent.mpl_dict['Figures'][str(keys[1])]['Update'] = True
             if self.function:
@@ -818,10 +830,6 @@ class App(QMainWindow):
             #    self.tree.itemChanged.disconnect()
             #    self.tree.clear()
             self.updateTree(defaults)
-            #    self.tree.itemChanged.connect(self.onItemChanged)
-            # We also need to rebuild our tree, unfortunately.
-            # Although this loops forever, so I'm missing something.
-            # I'm not sure why it doesn't properly... update the whole thing?
             #print(test.data(0,0))
 
         def onClicked(self, test):
