@@ -47,81 +47,28 @@ class MyMplCanvas(FigureCanvas):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         # Oddly, we don't care
         self.parent = data_parent
-        #self
-        # Track the mouse position
-        # We want the axes cleared every time plot() is called
-
-
-        #
         FigureCanvas.__init__(self, self.fig)
+        # Track the mouse position.
         self.setMouseTracking(True)
-        #self.clicked.connect(self.onClicked)
+        # Can't remembr what this is for; qt, most likely.
         self.hoverAxes = None
         self.activeAxes = None
         self.setParent(parent)
 
+        # Set the size policy such that we can't be squished, but will 
+        # instead simply grow and shrink with the dpi.
+        # We call updateGeometry upon changing the dpi to ensure grow to our new window size.
         FigureCanvas.setSizePolicy(self,
                 QSizePolicy.Fixed,
                 QSizePolicy.Fixed)
         FigureCanvas.updateGeometry(self)
 
-        #self.mpl_connect("scroll_event", self.scrolling)
-        self.fig_dict = '''{
-                            'type': 'plot', 
-                            'Update': False,
-                            }'''
-        self.dset_dict = '''{
-                            'color': -1,
-                            'alpha': 1, 
-                            'loc': 'None',
-                            'ylabel': '',
-                            'xlabel': '',
-                            'title': ''
-                            }'''
-
-        self.mpl_dict_lit = '''{
-                                'FilesToLoad': 'IGNORE',
-                                'Update': True,
-                                'Rows': 2, 
-                                'Columns': 4,
-                                'Datasets': 1,
-                                'FigDefaults': {},
-                                'DSetDefaults': {},
-                                'dpi': 300,
-                                'figsize': {
-                                  'width': 7,
-                                  'height': 4,
-                                 },
-                                'fontsize': {
-                                  'fontsize': 6,
-                                  'titlesize': 8,
-                                  'ticksize': 3
-                                 },
-                                'Colors': {
-                                  0: '#8dd3c7',
-                                  1: '#ffffb3',
-                                  2: '#bebada',
-                                  3: '#fb8072',
-                                  4: '#80b1d3',
-                                  5: '#fdb462',
-                                  6: '#a65628',
-                                  7: '#f781bf'
-                                 },
-                                'Figures': {}
-                               }'''
-        self.mpl_dict = ast.literal_eval(self.mpl_dict_lit)
-        self.mpl_dict['DSetDefaults'] = ast.literal_eval(self.dset_dict)
-        self.mpl_dict['FigDefaults'] = ast.literal_eval(self.fig_dict)
-        self.mpl_dict['FigDefaults']['data'] = {}
-        self.al = np.empty((1,1), dtype=[])
-        self.compute_initial_figure()
+        # Initial update call.
         self.update_figure()
+        # Some code for when we would like to do a movie later, maybe.
         ##timer = QtCore.QTimer(self)
         ##timer.timeout.connect(self.update_figure)
         ##timer.start(1000)
-
-    def compute_initial_figure(self):
-        self.updateFromDict()
 
     def plot(self, pd, index, ax, active=False):
         # pd is the plot dictionary
@@ -160,13 +107,11 @@ class MyMplCanvas(FigureCanvas):
             if pd['type'] == 'shade':
                 #try:
                 if True:
-                    #subplot_kwargs = dict(pd['data'][str(index)])
                     subplot_kwargs = {}
                     for key,val in pd['data'][str(index)].items():
                         if type(key) == str and len(key) >= 6:
                             if key[0:7] != 'valTree' and key[0:7] != 'keyTree':
                                 if key[0:7] != 'valtree' and key[0:7] != 'keytree':
-                                    print(key,val)
                                     subplot_kwargs[key] = val
                         else:
                             subplot_kwargs[key] = val
