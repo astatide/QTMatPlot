@@ -732,16 +732,14 @@ class App(QMainWindow):
                 ret_list.append(widget.text(0))
             return ret_list
 
-        def getParentDict(self, ddict, keys):
-            if hasattr(ddict, 'get'):
-                if len(keys) > 1:
-                    if type(ddict.get(keys[0])) == dict and len(keys) > 1:
-                        new_keys = keys[1:]
-                        self.getParentDict(ddict.get(keys), new_keys)
-                    else:
-                        return ddict.get(keys)
-                else:
-                    return ddict.get(keys)
+        def getParentDict(self, ddict, keys, ret=None):
+            print(keys, ret)
+            ret_item = ddict
+            for key in keys:
+                if hasattr(ret_item, 'get'):
+                    if type(ret_item.get(key)) == dict:
+                        ret_item = ret_item.get(key)
+            return ret_item
 
         def onItemChanged(self, test):
             # This works.
@@ -767,9 +765,10 @@ class App(QMainWindow):
             #print(self.getParentItems(test))
             # Seems to hold things in memory longer than it should.
             keys = self.getParentItems(test)
-            print(keys)
-            #item = self.getParentDict(self.data, keys)
-            print(item)
+            item = self.getParentDict(self.data, keys)
+            # Now we can ignore th other stuff.
+            print(item, keys[-1], test.data(0,0), test.data(1,0))
+            item[keys[-1]] = test.data(1,0)
             # Because we return the child widget, this is fine.
             # You can't have non list data, so enforce list type.
             # Well, that won't work for mpl stuff, so.
