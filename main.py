@@ -275,13 +275,25 @@ class MyMplCanvas(FigureCanvas):
             except:
                 # Definitely a tuple.
                 t = ast.literal_eval(i)
-                # Some complicated slicing, here.
-                if t[0] > t[1]:
-                    #index = (slice(None, None, None), slice(t[0], None, None), slice(t[0], t[1], None))
-                    index = (slice(None, None, None), slice(t[0], None, t[0]-t[1]), slice(t[1], t[0], t[0]-t[1]))
-                else:
-                    #index = (slice(None, None, None), slice(t[0], t[1], None), slice(t[0], None, None))
-                    index = (slice(None, None, None), slice(t[0], t[1], t[1]-t[0]), slice(t[1], None, t[1]-t[0]))
+                print(t)
+                try:
+                    # Some complicated slicing, here.
+                    # THIS IS FOR A 3D DATASET.
+                    if t[0] > t[1]:
+                        #index = (slice(None, None, None), slice(t[0], None, None), slice(t[0], t[1], None))
+                        index = (slice(None, None, None), slice(t[0], None, t[0]-t[1]), slice(t[1], t[0], t[0]-t[1]))
+                    else:
+                        #index = (slice(None, None, None), slice(t[0], t[1], None), slice(t[0], None, None))
+                        index = (slice(None, None, None), slice(t[0], t[1], t[1]-t[0]), slice(t[1], None, t[1]-t[0]))
+                except:
+                    # Some complicated slicing, here.
+                    # THIS IS FOR A 2D DATASET.
+                    # In this case, we only have t[0], which is either 0, or not.
+                    # We don't really have the dimensions here, but.
+                    if t > 0:
+                        index = (slice(None, None, None), slice(t, None, None))
+                    else:
+                        index = (slice(None, None, None), slice(t, t+1, None))
                 loc = loc[index]
         return loc.flatten()
 
@@ -724,8 +736,10 @@ class App(QMainWindow):
                                 keyTree.setText(1, str(val))
             self.tree.setColumnCount(self.col)
 
-        def getParentItems(self, widget, ret_list=[]):
+        def getParentItems(self, widget, ret_list=None):
             #print(widget.text(0))
+            if ret_list == None:
+                ret_list = []
             if widget is not None:
                 # There's a parent class.  Duh.
                 self.getParentItems(widget.parent(), ret_list)
@@ -775,7 +789,8 @@ class App(QMainWindow):
 
         def onClicked(self, test):
             # This is the thing which will actually return our dataset.
-            location = self.treeItemKeyDict[str(self.tree.selectedItems()[0])]
+            #location = self.treeItemKeyDict[str(self.tree.selectedItems()[0])]
+            location = self.getParentItems(self.tree.selectedItems()[0])
             # One thing we don't know is precisely how to format this, but that's okay.
             # We could just change this later.
             # We should probably store how we formatted it with the reverse dictionary, but.
