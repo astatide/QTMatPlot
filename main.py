@@ -90,7 +90,7 @@ class MyMplCanvas(FigureCanvas):
 
     def plot(self, pd, index, ax):
         # pd is the plot dictionary
-        ax.tick_params(axis='both', labelsize=float(self.parent.mpl_dict['fontsize']['fontsize']), length=self.parent.mpl_dict['fontsize']['ticksize'])
+        ax.tick_params(axis='both', labelsize=float(self.parent.mpl_dict['fontsize']['fontsize']), length=int(self.parent.mpl_dict['fontsize']['ticksize']))
         if pd['ylabel'] is not None:
             ax.set_ylabel(pd['ylabel'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
         if pd['xlabel'] is not None:
@@ -154,11 +154,17 @@ class MyMplCanvas(FigureCanvas):
         if self.parent.mpl_dict['Update'] == True:
             # This means that we're updating from the defaults.
             self.fig.clear()
-            self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']))
+            #self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']))
+            gridspec_kw = self.parent.mpl_dict['gridspec_kw']
+            subplot_kw = self.parent.mpl_dict['subplot_kw']
+            self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']), gridspec_kw=gridspec_kw, **subplot_kw)
             self.al = {}
             for rows in range(0, int(self.parent.mpl_dict['Rows'])):
                 for cols in range(0, int(self.parent.mpl_dict['Columns'])):
-                    self.al[(rows,cols)] = [0,0]
+                    # We need to update everything.
+                    # So trigger a redraw.
+                    self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = True
+                    self.axes[rows,cols]
             self.fig.set_dpi(int(d['dpi']))
             self.fig.set_size_inches(float(d['figsize']['width']), float(d['figsize']['height']))
             FigureCanvas.updateGeometry(self)
@@ -176,6 +182,8 @@ class MyMplCanvas(FigureCanvas):
             for cols in range(0, int(self.parent.mpl_dict['Columns'])):
                 # Throw in the axes object.
                 for dset in range(0, int(self.parent.mpl_dict['Datasets'])):
+                    print("UPDATING DATASETS")
+                    print(self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'])
                     if self.parent.mpl_dict['Active'] == str((rows,cols)):
                         self.axes[rows,cols].spines['bottom'].set_color("r")
                         self.axes[rows,cols].spines['left'].set_color("r")
@@ -189,8 +197,8 @@ class MyMplCanvas(FigureCanvas):
                         self.plot(self.parent.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols])
                         self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = False
                         plotted = True
-            if plotted:
-                self.fig.tight_layout()
+            #if plotted:
+            #    self.fig.tight_layout()
                     
 
     def mouseMoveEvent(self, event):
@@ -312,7 +320,9 @@ class App(QMainWindow):
                             'Update': True,
                             'ylabel': '',
                             'xlabel': '',
-                            'title': ''
+                            'title': '',
+                            'height': 'None',
+                            'width': 'None',
                             }'''
         self.dset_dict = '''{
                             'loc': 'None',
@@ -340,6 +350,18 @@ class App(QMainWindow):
                                   'fontsize': 6,
                                   'titlesize': 8,
                                   'ticksize': 3
+                                 },
+                                'gridspec_kw': {
+                                  'left': 0.1,
+                                  'right': 0.9,
+                                  'bottom': 0.1,
+                                  'top': 0.9,
+                                  'wspace': 0.3,
+                                  'hspace': 0.3,
+                                 },
+                                'subplot_kw': {
+                                  'sharey': True,
+                                  'sharex': True,
                                  },
                                 'Colors': {
                                   0: '#8dd3c7',
@@ -761,7 +783,7 @@ class App(QMainWindow):
             item = self.getParentDict(self.data, keys)
             # Now we can ignore th other stuff.
             print(item, keys[-1], test.data(0,0), test.data(1,0))
-            item[keys[-1]] = test.data(1,0)
+            item[keys[-1]] = ast.literal_eval(test.data(1,0))
             # Because we return the child widget, this is fine.
             # You can't have non list data, so enforce list type.
             # Well, that won't work for mpl stuff, so.
@@ -771,12 +793,20 @@ class App(QMainWindow):
             # TEST code
             # These are a bunch of checks to see if we need to update the subplots or the figure.
             if  keys[-1] == 'Rows' or keys[-1] == 'Columns' or keys[-1] == 'Datasets' or keys[-1] == 'FilesToLoad':
-                defaults = True
+                #defaults = True
                 self.parent.mpl_dict['Update'] = True
-            if  keys[-2] == 'DSetDefaults' or keys[-2] == 'FigDefaults':
+            # We need to check if our inner key is one of the fig or deset defaults.
+            # This fails if our list isn't that large, though.
+            if len(keys) >= 2:
+                key = keys[-2]
+            else:
+                key = keys[-1]
+            if  key == 'DSetDefaults' or key == 'FigDefaults':
                 defaults = True
                 self.parent.mpl_dict['Update'] = True
                 updatedKeys = [key]
+            if key == 'figsize' or key == 'fontsize' or key == 'gridspec_kw' or key == 'subplot_kw':
+                self.parent.mpl_dict['Update'] = True
             if keys[-1] == 'width' or keys[-1] == 'height' or keys[-1] == 'dpi':
                 self.parent.mpl_dict['Resize'] = True
             if keys[0] == 'Figures':
