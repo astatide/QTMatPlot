@@ -743,27 +743,6 @@ class App(QMainWindow):
 
         def onItemChanged(self, test):
             # This works.
-            #print("Changed!")
-            #print(self.treeItemKeyDict[str(test)])
-            # Find the key in the data.
-            #print(dir(test))
-            val = self.data
-            x = self.data
-            # Recurse through the dictionary
-            if self.rows:
-                for key in self.treeItemKeyDict[str(test)]:
-                    if type(x.get(key)) == dict:
-                        val = val.get(key)
-                        x = x.get(key)
-            else:
-                for key in self.treeItemKeyDict[str(test)]:
-                    if type(x.get(key)) == dict:
-                        val = val.get(key)
-                        x = x.get(key)
-            # Alright, we get the widget.  Let's see if we can't sort it?
-            print(self.treeItemKeyDict[str(test)])
-            #print(self.getParentItems(test))
-            # Seems to hold things in memory longer than it should.
             keys = self.getParentItems(test)
             item = self.getParentDict(self.data, keys)
             # Now we can ignore th other stuff.
@@ -773,48 +752,26 @@ class App(QMainWindow):
             # You can't have non list data, so enforce list type.
             # Well, that won't work for mpl stuff, so.
             #try:
-            #val[key] = test.data(1,0)
-            for key in keys:
-                if type(x.get(key)) == dict:
-                    val = val.get(key)
-                    x = x.get(key)
-
-            #except:
-            #    val = test.data(0,0)
-            #print(dir(test))
-            # This just lets us see if we're changing a default.  UPDATE THIS ROUTINE IF YOU ADD MORE PARAMETERS.
-            # But generally, they should be nested about 1 deep, so.
-            try:
-                oldkey = self.treeItemKeyDict[str(test)][-2]
-            except:
-                oldkey = self.treeItemKeyDict[str(test)][-1]
             defaults = False
             updatedKeys = None
             # TEST code
-            #print("TESTING")
-            #print(dir(self.tree))
-            if  key == 'Rows' or key == 'Columns' or key == 'Datasets' or key == 'FilesToLoad':
+            # These are a bunch of checks to see if we need to update the subplots or the figure.
+            if  keys[-1] == 'Rows' or keys[-1] == 'Columns' or keys[-1] == 'Datasets' or keys[-1] == 'FilesToLoad':
                 defaults = True
                 self.parent.mpl_dict['Update'] = True
-            if  oldkey == 'DSetDefaults' or oldkey == 'FigDefaults':
+            if  keys[-2] == 'DSetDefaults' or keys[-2] == 'FigDefaults':
                 defaults = True
                 self.parent.mpl_dict['Update'] = True
                 updatedKeys = [key]
-            print(key, oldkey, updatedKeys)
-            keys = self.treeItemKeyDict[str(test)]
-            print(keys)
-            if key == 'width' or key == 'height' or key == 'dpi':
+            if keys[-1] == 'width' or keys[-1] == 'height' or keys[-1] == 'dpi':
                 self.parent.mpl_dict['Resize'] = True
             if keys[0] == 'Figures':
+                # We do need to trigger a total redraw.
+                self.parent.mpl_dict['Update'] = True
                 self.parent.mpl_dict['Figures'][str(keys[1])]['Update'] = True
             if self.function:
-                print(updatedKeys, self.function)
                 self.function(defaults=defaults, updatedKeys=updatedKeys)
-            #if not defaults:
-            #    self.tree.itemChanged.disconnect()
-            #    self.tree.clear()
             self.updateTree(defaults)
-            #print(test.data(0,0))
 
         def onClicked(self, test):
             # This is the thing which will actually return our dataset.
