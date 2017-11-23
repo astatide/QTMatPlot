@@ -276,7 +276,7 @@ class MyMplCanvas(FigureCanvas):
 
     def translate_location(self, location):
         loc = self.data
-        for i in ast.literal_eval(location):
+        for i in location:
             try:
                 # Is it a string?
                 loc = loc[i]
