@@ -456,7 +456,6 @@ class App(QMainWindow):
 
     def updateFromDict(self, defaults=True, firstrun=False, updatedKeys=None):
         d = self.mpl_dict
-        print(updatedKeys)
         for rows in range(0, int(self.mpl_dict['Rows'])):
             for cols in range(0, int(self.mpl_dict['Columns'])):
                 if not defaults:
@@ -568,7 +567,6 @@ class App(QMainWindow):
                 self.tree.clicked.connect(self.onClicked)
             self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
             self.tree.customContextMenuRequested.connect(self.contextMenuEvent)
-            print(self.data['keyTree'])
 
         def contextMenuEvent(self, event):
             # Just get the horizontal value; we want anything in this row.
@@ -646,7 +644,6 @@ class App(QMainWindow):
             if type(self.data) == dict:
                 if new:
                     self.tree.clear()
-                print(self.data)
                 self.handleDict(self.data, self.tree, tree_dict=self.data['keyTree'], new=new)
             self.tree.itemChanged.connect(self.onItemChanged)
 
@@ -727,6 +724,25 @@ class App(QMainWindow):
                                 keyTree.setText(1, str(val))
             self.tree.setColumnCount(self.col)
 
+        def getParentItems(self, widget, ret_list=[]):
+            #print(widget.text(0))
+            if widget is not None:
+                # There's a parent class.  Duh.
+                self.getParentItems(widget.parent(), ret_list)
+                ret_list.append(widget.text(0))
+            return ret_list
+
+        def getParentDict(self, ddict, keys):
+            if hasattr(ddict, 'get'):
+                if len(keys) > 1:
+                    if type(ddict.get(keys[0])) == dict and len(keys) > 1:
+                        new_keys = keys[1:]
+                        self.getParentDict(ddict.get(keys), new_keys)
+                    else:
+                        return ddict.get(keys)
+                else:
+                    return ddict.get(keys)
+
         def onItemChanged(self, test):
             # This works.
             #print("Changed!")
@@ -746,11 +762,24 @@ class App(QMainWindow):
                     if type(x.get(key)) == dict:
                         val = val.get(key)
                         x = x.get(key)
+            # Alright, we get the widget.  Let's see if we can't sort it?
+            print(self.treeItemKeyDict[str(test)])
+            #print(self.getParentItems(test))
+            # Seems to hold things in memory longer than it should.
+            keys = self.getParentItems(test)
+            print(keys)
+            #item = self.getParentDict(self.data, keys)
+            print(item)
             # Because we return the child widget, this is fine.
             # You can't have non list data, so enforce list type.
             # Well, that won't work for mpl stuff, so.
             #try:
-            val[key] = test.data(1,0)
+            #val[key] = test.data(1,0)
+            for key in keys:
+                if type(x.get(key)) == dict:
+                    val = val.get(key)
+                    x = x.get(key)
+
             #except:
             #    val = test.data(0,0)
             #print(dir(test))
@@ -789,10 +818,7 @@ class App(QMainWindow):
             #print(test.data(0,0))
 
         def onClicked(self, test):
-            #print(self.tree.selectedItems())
-            #print(self.treeItemKeyDict)
             # This is the thing which will actually return our dataset.
-            #print(self.treeItemKeyDict[str(self.tree.selectedItems()[0])])
             location = self.treeItemKeyDict[str(self.tree.selectedItems()[0])]
             # One thing we don't know is precisely how to format this, but that's okay.
             # We could just change this later.
