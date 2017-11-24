@@ -68,8 +68,6 @@ class newTree():
         self.pos = pos
         self.size = size
         self.tree.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding)
-            #QSizePolicy.Expanding,
-        #A = QTreeWidgetItem(self.tree, ["A"])
         self.data = data
         self.data['keyTree'] = {}
         if size:
@@ -79,10 +77,8 @@ class newTree():
         self.function = function
         self.function2 = function2
         self.editable = editable
-        #self.tree.move(pos[0], pos[1])
-        # How should we handle this?  Like dictionaries, let's assume.
+        # Deprecated
         self.rows = rows
-        self.treeItemKeyDict = {}
         self.figures = None
         self.updateTree()
         if editable:
@@ -97,7 +93,7 @@ class newTree():
         horizontal = event
         horizontal.setX(0)
         index = self.tree.indexAt(horizontal)
-        location = self.treeItemKeyDict[str(self.tree.itemFromIndex(index))]
+        location = self.getParentItems(self.tree.selectedItems()[0])
         # Now we have the actual menu item we need to send to the dictionary.  That's location.
         # Now, create the menu...
         self.menu = QMenu()
@@ -186,7 +182,6 @@ class newTree():
                     keyTree = QTreeWidgetItem(tree, [str(key)])
                     keyTree.oldValue = [str(key)]
                     tree_dict['keyTree.{}'.format(key)] = keyTree
-                    self.treeItemKeyDict[str(keyTree)] = key_list + [str(key)]
                 else:
                     keyTree = tree_dict['keyTree.{}'.format(key)]
                     keyTree.setText(0, str(key))
@@ -195,7 +190,6 @@ class newTree():
                 if type(val) == dict:
                     if key not in tree_dict:
                         tree_dict[key] = {}
-                    #self.handleDict(val, keyTree, key_list + [str(key)], new=new, tree_dict=tree_dict[key])
                     self.handleDict(val, keyTree, key_list + [str(key)], new=new, tree_dict=tree_dict[key])
                 elif type(val) == h5py._hl.dataset.Dataset:
                     # Let's handle 2 and 3 dimensional data for now.  Anything more than that and it just... well, it won't plot anyway.
@@ -331,7 +325,6 @@ class newTree():
 
     def onClicked(self, test):
         # This is the thing which will actually return our dataset.
-        #location = self.treeItemKeyDict[str(self.tree.selectedItems()[0])]
         location = self.getParentItems(self.tree.selectedItems()[0])
         # One thing we don't know is precisely how to format this, but that's okay.
         # We could just change this later.
@@ -365,8 +358,3 @@ class newButton():
     @pyqtSlot()
     def button_test(self):
         print("We're clicking a button, wheee")
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    ex = App()
-    sys.exit(app.exec_())
