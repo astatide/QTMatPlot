@@ -564,6 +564,7 @@ class App(QMainWindow):
                     # Here, we're updating from the defaults.
                     new_dict = {}
                     for key, val in self.mpl_dict['FigDefaults'].items():
+                        #print(key,val)
                         if updatedKeys == None:
                             new_dict[key] = copy.deepcopy(val)
                         else:
@@ -577,6 +578,7 @@ class App(QMainWindow):
                     for dset in range(0, int(self.mpl_dict['Datasets'])):
                         new_dict = {}
                         for key, val in self.mpl_dict['DSetDefaults'].items():
+                            print(key,val)
                             if updatedKeys == None:
                                 new_dict[key] = copy.deepcopy(val)
                             else:
@@ -745,6 +747,7 @@ class App(QMainWindow):
             ddc = copy.copy(dict_data)
             con = False
             for key, val in ddc.items():
+                print(key,val)
                 if type(key) == str and len(key) >= 6:
                     if key[0:7] != 'keyTree' and key[0:7] != 'valTree':
                         con = True
@@ -758,13 +761,14 @@ class App(QMainWindow):
                         tree_dict['keyTree.{}'.format(key)] = keyTree
                         self.treeItemKeyDict[str(keyTree)] = key_list + [str(key)]
                     else:
-                        keyTree = tree_dict['keyTree.{}'.format(key)]
+                        keyTree = tree_dict[key]
                         keyTree.setText(0, str(key))
                     if key == 'Figures':
                         self.figures = keyTree
                     if type(val) == dict:
                         if key not in tree_dict:
                             tree_dict[key] = {}
+                        #self.handleDict(val, keyTree, key_list + [str(key)], new=new, tree_dict=tree_dict[key])
                         self.handleDict(val, keyTree, key_list + [str(key)], new=new, tree_dict=tree_dict[key])
                     elif type(val) == h5py._hl.dataset.Dataset:
                         # Let's handle 2 and 3 dimensional data for now.  Anything more than that and it just... well, it won't plot anyway.
@@ -842,9 +846,14 @@ class App(QMainWindow):
             # This works.
             keys = self.getParentItems(test)
             item = self.getParentDict(self.data, keys)
-            # Now we can ignore th other stuff.
+            print("CHANGING DATA")
             print(item, keys[-1], test.data(0,0), test.data(1,0))
+            print(test.data(0,0), test.data(1,0))
+            # Now we can ignore th other stuff.
+            del item[keys[-1]]
             item[keys[-1]] = ast.literal_eval(test.data(1,0))
+            self.data = self.parent.mpl_dict
+            # Refresh our dictionary.
             # Because we return the child widget, this is fine.
             # You can't have non list data, so enforce list type.
             # Well, that won't work for mpl stuff, so.
