@@ -118,7 +118,8 @@ class MyMplCanvas(FigureCanvas):
                     else:
                         pass
             if pd['type'] == 'shade':
-                try:
+                #try:
+                if True:
                     '''subplot_kwargs = {}
                     for key,val in pd['data'][str(index)].items():
                         if type(key) == str and len(key) >= 6:
@@ -136,16 +137,16 @@ class MyMplCanvas(FigureCanvas):
                     elif str(subplot_kwargs['color'])[0] == "#":
                         pass
                     else:
-                        subplot_kwargs['color'] = self.parent.mpl_dict['Colors'][int(subplot_kwargs['color'])]
+                        subplot_kwargs['color'] = self.parent.mpl_dict['Colors'][subplot_kwargs['color']]
                     ax.plot(self.translate_location(pd['data'][str(index)]['loc'])['expected'][:], **subplot_kwargs)
                     subplot_kwargs['alpha'] = .3
                     handle = ax.fill_between(range(0, self.translate_location(pd['data'][str(index)]['loc'])['expected'].shape[0]), self.translate_location(pd['data'][str(index)]['loc'])['ci_ubound'][:], self.translate_location(pd['data'][str(index)]['loc'])['ci_lbound'][:], **subplot_kwargs)
                     return handle
-                except Exception as e:
+                '''except Exception as e:
                     if self.notify_func is not None:
                         self.notify_func(e)
                     else:
-                        pass
+                        pass'''
                 #self.axes
 
     def updateFromDict(self):
@@ -276,7 +277,7 @@ class MyMplCanvas(FigureCanvas):
 
     def translate_location(self, location):
         loc = self.data
-        for i in location:
+        for i in ast.literal_eval(location):
             try:
                 # Is it a string?
                 loc = loc[i]
@@ -448,7 +449,6 @@ class App(QMainWindow):
         #self.blayout.addWidget(self.toolbar)
         #self.bwidget.setMinimumHeight((self.width-self.save_button.button.width(), 30))
         #self.text.textBox.setMinimumHeight((10))
-        print(dir(self.text.textBox))
         #self.text.textBox.setMaximumHeight((10))
         self.bwidget.setLayout(self.blayout)
         # Remove title bar.
@@ -758,10 +758,11 @@ class App(QMainWindow):
                 if con:
                     if 'keyTree.{}'.format(key) not in tree_dict or new:
                         keyTree = QTreeWidgetItem(tree, [str(key)])
+                        keyTree.oldValue = [str(key)]
                         tree_dict['keyTree.{}'.format(key)] = keyTree
                         self.treeItemKeyDict[str(keyTree)] = key_list + [str(key)]
                     else:
-                        keyTree = tree_dict[key]
+                        keyTree = tree_dict['keyTree.{}'.format(key)]
                         keyTree.setText(0, str(key))
                     if key == 'Figures':
                         self.figures = keyTree
@@ -807,6 +808,7 @@ class App(QMainWindow):
                                     if self.editable:
                                         keyTree.setFlags(keyTree.flags() | QtCore.Qt.ItemIsEditable)
                                     keyTree.setText(iv+1, str(v))
+                                    keyTree.oldValue.append((str(v)))
                                     self.col += iv
                             else:
                                 if self.editable:
@@ -814,6 +816,7 @@ class App(QMainWindow):
                                 if key == 'dpi':
                                     print(str(val))
                                 keyTree.setText(1, str(val))
+                                keyTree.oldValue.append((str(val)))
             self.tree.setColumnCount(self.col)
 
         def getParentItems(self, widget, ret_list=None):
@@ -846,13 +849,38 @@ class App(QMainWindow):
             # This works.
             keys = self.getParentItems(test)
             item = self.getParentDict(self.data, keys)
+            treeItem = self.getParentDict(self.parent.mpl_dict['keyTree'], keys)
             print("CHANGING DATA")
             print(item, keys[-1], test.data(0,0), test.data(1,0))
             print(test.data(0,0), test.data(1,0))
             # Now we can ignore th other stuff.
-            del item[keys[-1]]
-            item[keys[-1]] = ast.literal_eval(test.data(1,0))
+            print(test.oldValue)
+            del item[test.oldValue[0]]
+            #print(treeItem)
+            # Remove the tree, and just recreate it.
+            # You do need to have it selected to edit it.  Not sure this is forever behavior.
+            #print(self.tree.indexOfTopLevelItem())
+            # THIS FUCKING COMMAND KNOWS WHAT I'M TALKING ABOUT.
+            # WE NEED THE ROW, GET FUCKED.
+            #self.tree.takeTopLevelItem(int(self.tree.indexFromItem(treeItem['keyTree.{}'.format(test.oldValue[0])]).row()))
+            try:
+                test.parent().removeChild(test)
+            except:
+                self.tree.takeTopLevelItem(int(self.tree.indexFromItem(treeItem['keyTree.{}'.format(test.oldValue[0])]).row()))
+            #self.tree.removeChild(self.tree.indexFromItem(treeItem['keyTree.{}'.format(test.oldValue[0])]))
+            del treeItem['keyTree.{}'.format(test.oldValue[0])]
+            #del treeItem['keyTree.{}'.format(test.data(0,0))]
+            print(test.data(1,0))
+            #try:
+                # Try to see if we can't convert to a real data type.
+                # On the other hand, maybe we don't always want to do this?
+            #item[keys[-1]] = ast.literal_eval(test.data(1,0))
+            #except:
+                # Otherwise, assume a string.
+            item[keys[-1]] = test.data(1,0)
             self.data = self.parent.mpl_dict
+            test.oldValue = [test.data(0,0), test.data(1,0)]
+            print(self.parent.mpl_dict['Colors'])
             # Refresh our dictionary.
             # Because we return the child widget, this is fine.
             # You can't have non list data, so enforce list type.
