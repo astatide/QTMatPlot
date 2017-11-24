@@ -628,6 +628,8 @@ class App(QMainWindow):
         def __init__(self, parent, data, pos, col=1, rows=True, size=None, editable=True, clickable=False, function=None, get_figures=None, mpl=None, function2=None):
             self.tree = QTreeWidget(parent)
             self.tree.setColumnCount(col+1)
+            self.tree.setSortingEnabled(True)
+            self.tree.sortByColumn(0, 0)
             self.parent = parent
             self.get_figures = get_figures
             self.col = col+1
@@ -746,7 +748,7 @@ class App(QMainWindow):
             # We want to do a reverse lookup
             ddc = copy.copy(dict_data)
             con = False
-            for key, val in ddc.items():
+            for key, val in sorted(ddc.items(), key= lambda x: str(x)):
                 print(key,val)
                 if type(key) == str and len(key) >= 6:
                     if key[0:7] != 'keyTree' and key[0:7] != 'valTree':
