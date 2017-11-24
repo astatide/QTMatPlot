@@ -164,20 +164,21 @@ class mplCanvas(FigureCanvas):
             gridspec_kw = self.parent.mpl_dict['gridspec_kw']
             subplot_kw = self.parent.mpl_dict['subplot_kw']
             for k, v in gridspec_kw.items():
-                gridspec_kw[str(k)] = float(v)
+                try:
+                    gridspec_kw[str(k)] = float(v)
+                except:
+                    pass
+            for k, v in subplot_kw.items():
+                try:
+                    subplot_kw[str(k)] = ast.literal_eval(str(v))
+                except:
+                    pass
             if "GridRatio" in self.parent.mpl_dict:
-                # We want to keep our x to y ratio at some value, here... which is
-                # going to be based on
-                # So, let's see...
-                #for k in ['bottom', 'top']:
-                    # Calculate target height
-                    # ratio = width * (top - bottom) / ncols
-                    # gridsize: (top-bottom) = ratio*ncols/width
                 print((self.parent.mpl_dict['GridRatio'][0]), (d['Columns']), (d['figsize']['width']))
                 gridH = (float(ast.literal_eval(self.parent.mpl_dict['GridRatio'])[0]) * float(d['Columns']) / float(d['figsize']['width'])) / 2
                 gridW = (float(ast.literal_eval(self.parent.mpl_dict['GridRatio'])[1]) * float(d['Rows']) / float(d['figsize']['height'])) / 2
-                gridspec_kw['top'] = 0.5 + gridW
-                gridspec_kw['bottom'] = 0.5 - gridW
+                gridspec_kw['top'] = 0.9
+                gridspec_kw['bottom'] = 0.9 - (2*gridW)
                 gridspec_kw['left'] = 0.5 - gridH
                 gridspec_kw['right'] = 0.5 + gridH
                 self.parent.mpl_dict['gridspec_kw'] = gridspec_kw
@@ -203,6 +204,7 @@ class mplCanvas(FigureCanvas):
         # This should just occur on a rebuild, so if we haven't added anything, don't worry about it.
         active = False
         plotted = False
+        self.fig.suptitle(self.parent.mpl_dict['Title'] if self.parent.mpl_dict is not None else '')
         for rows in range(0, int(self.parent.mpl_dict['Rows'])):
             for cols in range(0, int(self.parent.mpl_dict['Columns'])):
                 # Throw in the axes object.

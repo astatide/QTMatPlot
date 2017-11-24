@@ -348,7 +348,7 @@ class newTree():
             defaults = True
             self.parent.mpl_dict['Update'] = True
             updatedKeys = [key]
-        if key == 'figsize' or key == 'fontsize' or key == 'gridspec_kw' or key == 'subplot_kw':
+        if key == 'figsize' or key == 'fontsize' or key == 'gridspec_kw' or key == 'subplot_kw' or 'GridRatio':
             self.parent.mpl_dict['Update'] = True
         if keys[-1] == 'width' or keys[-1] == 'height' or keys[-1] == 'dpi':
             self.parent.mpl_dict['Resize'] = True
