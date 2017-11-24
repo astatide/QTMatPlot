@@ -142,7 +142,7 @@ class mplCanvas(FigureCanvas):
                     elif str(subplot_kwargs['color'])[0] == "#":
                         pass
                     else:
-                        subplot_kwargs['color'] = self.parent.mpl_dict['Colors'][subplot_kwargs['color']]
+                        subplot_kwargs['color'] = self.parent.mpl_dict['Colors'][int(subplot_kwargs['color'])]
                     ax.plot(self.translate_location(pd['data'][str(index)]['loc'])['expected'][:], **subplot_kwargs)
                     subplot_kwargs['alpha'] = .3
                     handle = ax.fill_between(range(0, self.translate_location(pd['data'][str(index)]['loc'])['expected'].shape[0]), self.translate_location(pd['data'][str(index)]['loc'])['ci_ubound'][:], self.translate_location(pd['data'][str(index)]['loc'])['ci_lbound'][:], **subplot_kwargs)

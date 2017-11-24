@@ -128,7 +128,7 @@ class newTree():
         # This function reassigns a plot to be the dataset in location.
         key = self.parent.mpl_dict['Active']
         if key is not None:
-            self.parent.mpl_dict['Figures'][str(key)]['data']['0']['loc'] = location
+            self.parent.mpl_dict['Figures'][str(key)]['data']['0']['loc'] = str(location)
             self.parent.mpl_dict['Figures'][str(key)]['Update'] = True
             self.parent.mpl_dict['keyTree']['Figures'][str(key)]['data']['0']['keyTree.loc'].setText(1, str(location))
             self.parent.refreshWidgets()
@@ -259,7 +259,7 @@ class newTree():
     def changeItem(self, item):
         # This deletes both the key and the item in the original dictionary.
         # Then, it recreates it.
-        '''keys = self.getParentItems(item)
+        keys = self.getParentItems(item)
         dictItem = self.getParentDict(self.data, keys)
         treeItem = self.getParentDict(self.parent.mpl_dict['keyTree'], keys)
 
@@ -283,9 +283,9 @@ class newTree():
         # Once we call the update function, it'll regenerate the QTreeWidgetItem
         dictItem[item.data(0,0)] = item.data(1,0)
         print(item.data(0,0), item.data(1,0), dictItem[item.data(0,0)])
-        item.oldValue = [item.data(0,0), item.data(1,0)]'''
-        self.removeItem(item)
-        self.addItem(item)
+        item.oldValue = [item.data(0,0), item.data(1,0)]
+        #self.removeItem(item)
+        #self.addItem(item)
 
     def removeItem(self, item):
         # This deletes both the key and the item in the original dictionary.
@@ -319,7 +319,7 @@ class newTree():
 
         # Now, we add the new key: pair value into the original dictionary.
         # Once we call the update function, it'll regenerate the QTreeWidgetItem
-        print(ddict)
+        print(ddict, keys)
         if ddict is None:
             dictItem[item.data(0,0)] = item.data(1,0)
             print(item.data(0,0), item.data(1,0), dictItem[item.data(0,0)])
@@ -329,8 +329,8 @@ class newTree():
 
     def onItemChanged(self, test):
         # This works.
-        self.changeItem(test)
         keys = self.getParentItems(test)
+        self.changeItem(test)
         defaults = False
         updatedKeys = None
         # TEST code

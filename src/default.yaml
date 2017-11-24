@@ -1,13 +1,13 @@
 Active: None
 Colors:
-  0: '#8dd3c7'
-  1: '#ffffb3'
-  2: '#bebada'
-  3: '#fb8072'
+  0: '#2d2d2d'
+  1: '#439084'
+  2: '#ad6659'
+  3: '#c0a15a'
   4: '#80b1d3'
   5: '#fdb462'
-  6: '#a65628'
-  7: '#f781bf'
+  6: '#b64e5d'
+  7: '#434864'
 Columns: 4
 DSetDefaults:
   alpha: 1
