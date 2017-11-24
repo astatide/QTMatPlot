@@ -73,7 +73,7 @@ class mplCanvas(FigureCanvas):
         self.activeAxes = None
         self.setParent(parent)
 
-        # Set the size policy such that we can't be squished, but will 
+        # Set the size policy such that we can't be squished, but will
         # instead simply grow and shrink with the dpi.
         # We call updateGeometry upon changing the dpi to ensure grow to our new window size.
         FigureCanvas.setSizePolicy(self,
@@ -82,7 +82,12 @@ class mplCanvas(FigureCanvas):
         FigureCanvas.updateGeometry(self)
 
         # Initial update call.
+        self.parent.mpl_dict['Update'] = True
+        self.parent.mpl_dict['Resize'] = True
+        #self.updateFromDict()
         self.update_figure()
+        #self.parent.mpl_dict['Update'] = True
+        #self.parent.mpl_dict['Resize'] = True
         # Some code for when we would like to do a movie later, maybe.
         ##timer = QtCore.QTimer(self)
         ##timer.timeout.connect(self.update_figure)
@@ -198,7 +203,7 @@ class mplCanvas(FigureCanvas):
                         plotted = True
             #if plotted:
             #    self.fig.tight_layout()
-                    
+
 
     def mouseMoveEvent(self, event):
         # translate into MPL coordinates
@@ -243,7 +248,7 @@ class mplCanvas(FigureCanvas):
 
     def update_figure(self, defaults=True):
         self.updateFromDict()
-        FigureCanvas.updateGeometry(self)
+        #FigureCanvas.updateGeometry(self)
         self.draw()
 
     def translate_location(self, location):
@@ -280,5 +285,3 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = App()
     sys.exit(app.exec_())
-
-

@@ -119,30 +119,19 @@ class newTree():
         #self.menu.addAction(e_action)
         self.menu.popup(QCursor.pos())
 
-    def reassignMpl(self, location):
-        #key = self.itemDict[i.i]['key']
-        #dkey = self.itemDict[i.i]['dkey']
-        #location = self.itemDict[i.i]['location']
-        #tmp = self.mpl.get(['Figures'][key]['data'][dkey])
-        #tmp = self.parent.mpl_dict.get('Figures')
-        #tmp = tmp.get(key)
-        #tmp = tmp.get('data')
-        #tmp = tmp.get(dkey)
-        #tmp['loc'] = location
-        # Forc dictionary update?
-        #d = copy.deepcopy(self.parent.mpl_dict)
-        #self.parent.mpl_dict['Figures'][str(key)]['data'][str(dkey)]['loc'] = location
-        #self.parent.mpl_dict['Figures'][str(key)]['data'][str(dkey)]['valTree.loc'].setText(0, str(location))
-        key = self.parent.mpl_dict['Active']
-        self.parent.mpl_dict['Figures'][str(key)]['data']['0']['loc'] = location
-        self.parent.mpl_dict['Figures'][str(key)]['Update'] = True
-        self.parent.mpl_dict['keyTree']['Figures'][str(key)]['data']['0']['keyTree.loc'].setText(1, str(location))
-        #self.parent.mpl_dict = copy.deepcopy(d)
+    def reassignMplFromHighlightedData(self):
+        #print(self.tree.selectedItems())
+        location = self.getParentItems(self.tree.selectedItems()[0])
+        self.reassignMpl(location)
 
-        #tmp = self.parent.mpl_dict.get(['Figures'][key]['data'])
-        #tmp[dkey]['loc'] = location
-        self.parent.refreshWidgets()
-        #self.function2()
+    def reassignMpl(self, location):
+        # This function reassigns a plot to be the dataset in location.
+        key = self.parent.mpl_dict['Active']
+        if key is not None:
+            self.parent.mpl_dict['Figures'][str(key)]['data']['0']['loc'] = location
+            self.parent.mpl_dict['Figures'][str(key)]['Update'] = True
+            self.parent.mpl_dict['keyTree']['Figures'][str(key)]['data']['0']['keyTree.loc'].setText(1, str(location))
+            self.parent.refreshWidgets()
 
     def updateData(data):
         self.data = data
@@ -270,7 +259,7 @@ class newTree():
     def changeItem(self, item):
         # This deletes both the key and the item in the original dictionary.
         # Then, it recreates it.
-        keys = self.getParentItems(item)
+        '''keys = self.getParentItems(item)
         dictItem = self.getParentDict(self.data, keys)
         treeItem = self.getParentDict(self.parent.mpl_dict['keyTree'], keys)
 
@@ -294,25 +283,54 @@ class newTree():
         # Once we call the update function, it'll regenerate the QTreeWidgetItem
         dictItem[item.data(0,0)] = item.data(1,0)
         print(item.data(0,0), item.data(1,0), dictItem[item.data(0,0)])
-        item.oldValue = [item.data(0,0), item.data(1,0)]
+        item.oldValue = [item.data(0,0), item.data(1,0)]'''
+        self.removeItem(item)
+        self.addItem(item)
+
+    def removeItem(self, item):
+        # This deletes both the key and the item in the original dictionary.
+        keys = self.getParentItems(item)
+        dictItem = self.getParentDict(self.data, keys)
+        treeItem = self.getParentDict(self.parent.mpl_dict['keyTree'], keys)
+
+        # Now, we delete both the item, and the key.
+        # oldValue is something I've appended to the QTreeWidgetItem to keep
+        # track of things in the dictionary.  We lose that after we change things.
+        del dictItem[item.oldValue[0]]
+
+        # Now we try deleting the widget.  We rely on our main function to recreate
+        # QTreeWidgetItems as necessary; it's only necessary that we remove it.
+        try:
+            item.parent().removeChild(item)
+        except:
+            self.tree.takeTopLevelItem(int(self.tree.indexFromItem(treeItem['keyTree.{}'.format(item.oldValue[0])]).row()))
+        # Now, remove the widget from the keyTree; this way, it'll be recreated.
+        try:
+            del treeItem['keyTree.{}'.format(item.oldValue[0])]
+        except:
+            pass
+
+    def addItem(self, item, ddict = None):
+        # This deletes both the key and the item in the original dictionary.
+        # Then, it recreates it.
+        keys = self.getParentItems(item)
+        dictItem = self.getParentDict(self.data, keys)
+        treeItem = self.getParentDict(self.parent.mpl_dict['keyTree'], keys)
+
+        # Now, we add the new key: pair value into the original dictionary.
+        # Once we call the update function, it'll regenerate the QTreeWidgetItem
+        print(ddict)
+        if ddict is None:
+            dictItem[item.data(0,0)] = item.data(1,0)
+            print(item.data(0,0), item.data(1,0), dictItem[item.data(0,0)])
+            item.oldValue = [item.data(0,0), item.data(1,0)]
+        else:
+            dictItem[ddict[0]] = ddict[1]
 
     def onItemChanged(self, test):
         # This works.
-        keys = self.getParentItems(test)
-        '''item = self.getParentDict(self.data, keys)
-        treeItem = self.getParentDict(self.parent.mpl_dict['keyTree'], keys)
-        # Now we can ignore th other stuff.
-        del item[test.oldValue[0]]
-        # Remove the tree, and just recreate it.
-        try:
-            test.parent().removeChild(test)
-        except:
-            self.tree.takeTopLevelItem(int(self.tree.indexFromItem(treeItem['keyTree.{}'.format(test.oldValue[0])]).row()))
-        del treeItem['keyTree.{}'.format(test.oldValue[0])]
-        item[keys[-1]] = test.data(1,0)
-        self.data = self.parent.mpl_dict
-        test.oldValue = [test.data(0,0), test.data(1,0)]'''
         self.changeItem(test)
+        keys = self.getParentItems(test)
         defaults = False
         updatedKeys = None
         # TEST code

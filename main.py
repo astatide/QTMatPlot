@@ -26,7 +26,7 @@ sns.set(font='sans-serif', style='ticks')
 sns.set_palette('deep')
 
 import yaml
-from src import * 
+from src import *
 
 # and here http://www.boxcontrol.net/embedding-matplotlib-plot-on-pyqt5-gui.html
 
@@ -113,6 +113,7 @@ class App(QMainWindow):
         self.datawidget = QWidget(self)
         # Create buttons
         self.loadData = newButton(self, "Load Data", "Adds a new key: value", (640,0), self.addToDict, click_args=None)
+        self.sendData = newButton(self, "Plot", "Plot Active Dataset", (640,0), self.dataTree.reassignMplFromHighlightedData, click_args=None)
         #self.dataButtonlayout = QHBoxLayout(self.datawidget)
         #self.dataButtonwidget = QWidget(self)
         #self.dataButtonwidget.setLayout(self.dataButtonlayout)
@@ -120,6 +121,7 @@ class App(QMainWindow):
         #self.dataButtonlayout.addWidget(self.delValue.button)
         self.datalayout.addWidget(self.dataTree.tree)
         #self.datalayout.addWidget(self.dataButtonwidget)
+        self.datalayout.addWidget(self.sendData.button)
         self.datalayout.addWidget(self.loadData.button)
         self.datawidget.setLayout(self.datalayout)
         self.datadock.setWidget(self.datawidget)
@@ -168,7 +170,7 @@ class App(QMainWindow):
         self.show()
 
     def addToDict(self):
-        keys = self.mplTree.returnHighlightedDictionary()
+        '''keys = self.mplTree.returnHighlightedDictionary()
         if keys is not None and len(keys) > 1:
             ddict = self.mplTree.getParentDict(self.mpl_dict, keys[:-1])
         else:
@@ -180,10 +182,16 @@ class App(QMainWindow):
             else:
                 print(ddict['New.{}'.format(i)])
                 pass
+        self.mplTree.updateTree()'''
+        print(self.mplTree.tree.selectedItems())
+        try:
+            self.mplTree.addItem(self.mplTree.tree.selectedItems()[0].parent(), ddict=['New', None])
+        except:
+            self.mplTree.addItem(self.mplTree.tree.topLevelItem(0), ddict=['New', None])
         self.mplTree.updateTree()
 
     def delFromDict(self):
-        print("DELETING")
+        '''print("DELETING")
         keys = self.mplTree.returnHighlightedDictionary()
         if keys is not None:
             ddict = self.mplTree.getParentDict(self.mpl_dict, keys[:-1])
@@ -199,7 +207,9 @@ class App(QMainWindow):
             self.mplTree.tree.takeTopLevelItem(int(self.mplTree.tree.indexFromItem(test).row()))
         except:
             test.parent().removeChild(test)
-        self.mplTree.updateTree()
+        self.mplTree.updateTree()'''
+        self.mplTree.removeItem(self.mplTree.tree.selectedItems()[0])
+
 
     def save_figure(self):
         self.fig.savefig("test.pdf")
