@@ -1,0 +1,49 @@
+Active: None
+Colors:
+  0: '#8dd3c7'
+  1: '#ffffb3'
+  2: '#bebada'
+  3: '#fb8072'
+  4: '#80b1d3'
+  5: '#fdb462'
+  6: '#a65628'
+  7: '#f781bf'
+Columns: 4
+DSetDefaults:
+  alpha: 1
+  color: -1
+  loc: None
+  range: None
+Datasets: 1
+FigDefaults:
+  Update: true
+  height: None
+  title: ''
+  type: shade
+  width: None
+  xlabel: ''
+  ylabel: ''
+Figures: {}
+FilesToLoad: IGNORE
+Resize: true
+Rows: 2
+Update: true
+dpi: 300
+figsize:
+  height: 4
+  width: 7
+fontsize:
+  fontsize: 6
+  ticksize: 3
+  titlesize: 8
+gridspec_kw:
+  bottom: 0.1
+  hspace: 0.3
+  left: 0.1
+  right: 0.9
+  top: 0.9
+  wspace: 0.3
+keyTree: {}
+subplot_kw:
+  sharex: true
+  sharey: true
