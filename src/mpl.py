@@ -177,8 +177,12 @@ class mplCanvas(FigureCanvas):
                 print((self.parent.mpl_dict['GridRatio'][0]), (d['Columns']), (d['figsize']['width']))
                 gridH = (float(ast.literal_eval(self.parent.mpl_dict['GridRatio'])[0]) * float(d['Columns']) / float(d['figsize']['width'])) / 2
                 gridW = (float(ast.literal_eval(self.parent.mpl_dict['GridRatio'])[1]) * float(d['Rows']) / float(d['figsize']['height'])) / 2
-                gridspec_kw['top'] = 0.9
-                gridspec_kw['bottom'] = 0.9 - (2*gridW)
+                if "TitleHeight" in self.parent.mpl_dict:
+                    th = (float(d['figsize']['height']) - float(d['TitleHeight'])) / float(d['figsize']['height'])
+                else:
+                    th = .9
+                gridspec_kw['top'] = th
+                gridspec_kw['bottom'] = th - (2*gridW)
                 gridspec_kw['left'] = 0.5 - gridH
                 gridspec_kw['right'] = 0.5 + gridH
                 self.parent.mpl_dict['gridspec_kw'] = gridspec_kw

@@ -37,7 +37,8 @@ fontsize:
   ticksize: 3
   titlesize: 8
 GridRatio: (1.449,.9)
-Title: None
+Title: ''
+TitleHeight: 0.4
 gridspec_kw:
   bottom: 0.1
   hspace: 0.3
