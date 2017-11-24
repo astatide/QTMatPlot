@@ -163,7 +163,7 @@ class newTree():
     def getFigures(self):
         return self.figures
 
-    def handleDict(self, dict_data, tree, key_list=[], tree_dict={},new=False):
+    def handleDict(self, dict_data, tree, tree_dict={},new=False):
         # We can actually have numerous structures, here.
         # Why not keep track of it, for now?
         # We want to do a reverse lookup
@@ -190,7 +190,7 @@ class newTree():
                 if type(val) == dict:
                     if key not in tree_dict:
                         tree_dict[key] = {}
-                    self.handleDict(val, keyTree, key_list + [str(key)], new=new, tree_dict=tree_dict[key])
+                    self.handleDict(val, keyTree, new=new, tree_dict=tree_dict[key])
                 elif type(val) == h5py._hl.dataset.Dataset:
                     # Let's handle 2 and 3 dimensional data for now.  Anything more than that and it just... well, it won't plot anyway.
                     # I know this shouldn't go into the handlDict function, but hey.  At least rename it.
@@ -216,10 +216,9 @@ class newTree():
                                         sdict[(i,j)][v] = str(val.shape)
                                 else:
                                     sdict[(i,j)] = str(val.shape)
-                                    #self.handleDict({ val.name : str(val.shape) }, keyTree, key_list + [str(key)], new=new)
                     if key not in tree_dict:
                         tree_dict[key] = {}
-                    self.handleDict(sdict, keyTree, key_list + [str(key)], new=new, tree_dict=tree_dict[key])
+                    self.handleDict(sdict, keyTree, new=new, tree_dict=tree_dict[key])
                 else:
                     # We want this to be like rows, not columns
                     if self.rows:
@@ -238,6 +237,11 @@ class newTree():
         self.tree.setColumnCount(self.col)
 
     def getParentItems(self, widget, ret_list=None):
+        # This function recurses through the parent widgets, getting the text in
+        # column 1, and appending it to a list.  It's specific for this
+        # implementation in that we're storing keys as the 1st column text;
+        # ergo, this returns the set of keys to go through either the item or
+        # tree dictionary (here, keyTree)
         if ret_list == None:
             ret_list = []
         if widget is not None:
@@ -247,6 +251,8 @@ class newTree():
         return ret_list
 
     def getParentDict(self, ddict, keys, ret=None):
+        # This function returns the pointer of the actual data item at the last
+        # key point.  Useful for avoiding pointer problems with dictionaries.
         ret_item = ddict
         for key in keys:
             if hasattr(ret_item, 'get'):
@@ -261,39 +267,52 @@ class newTree():
             location = None
         return location
 
+    def changeItem(self, item):
+        # This deletes both the key and the item in the original dictionary.
+        # Then, it recreates it.
+        keys = self.getParentItems(item)
+        dictItem = self.getParentDict(self.data, keys)
+        treeItem = self.getParentDict(self.parent.mpl_dict['keyTree'], keys)
+
+        # Now, we delete both the item, and the key.
+        # oldValue is something I've appended to the QTreeWidgetItem to keep
+        # track of things in the dictionary.  We lose that after we change things.
+        del dictItem[item.oldValue[0]]
+
+        # Now we try deleting the widget.  We rely on our main function to recreate
+        # QTreeWidgetItems as necessary; it's only necessary that we remove it.
+        try:
+            item.parent().removeChild(item)
+        except:
+            self.tree.takeTopLevelItem(int(self.tree.indexFromItem(treeItem['keyTree.{}'.format(item.oldValue[0])]).row()))
+        # Now, remove the widget from the keyTree; this way, it'll be recreated.
+        try:
+            del treeItem['keyTree.{}'.format(item.oldValue[0])]
+        except:
+            pass
+        # Now, we add the new key: pair value into the original dictionary.
+        # Once we call the update function, it'll regenerate the QTreeWidgetItem
+        dictItem[item.data(0,0)] = item.data(1,0)
+        print(item.data(0,0), item.data(1,0), dictItem[item.data(0,0)])
+        item.oldValue = [item.data(0,0), item.data(1,0)]
+
     def onItemChanged(self, test):
         # This works.
         keys = self.getParentItems(test)
-        item = self.getParentDict(self.data, keys)
+        '''item = self.getParentDict(self.data, keys)
         treeItem = self.getParentDict(self.parent.mpl_dict['keyTree'], keys)
         # Now we can ignore th other stuff.
         del item[test.oldValue[0]]
         # Remove the tree, and just recreate it.
-        # You do need to have it selected to edit it.  Not sure this is forever behavior.
-        # THIS FUCKING COMMAND KNOWS WHAT I'M TALKING ABOUT.
-        # WE NEED THE ROW, GET FUCKED.
-        #self.tree.takeTopLevelItem(int(self.tree.indexFromItem(treeItem['keyTree.{}'.format(test.oldValue[0])]).row()))
         try:
             test.parent().removeChild(test)
         except:
             self.tree.takeTopLevelItem(int(self.tree.indexFromItem(treeItem['keyTree.{}'.format(test.oldValue[0])]).row()))
-        #self.tree.removeChild(self.tree.indexFromItem(treeItem['keyTree.{}'.format(test.oldValue[0])]))
         del treeItem['keyTree.{}'.format(test.oldValue[0])]
-        #del treeItem['keyTree.{}'.format(test.data(0,0))]
-        #try:
-            # Try to see if we can't convert to a real data type.
-            # On the other hand, maybe we don't always want to do this?
-        #item[keys[-1]] = ast.literal_eval(test.data(1,0))
-        #except:
-            # Otherwise, assume a string.
         item[keys[-1]] = test.data(1,0)
         self.data = self.parent.mpl_dict
-        test.oldValue = [test.data(0,0), test.data(1,0)]
-        # Refresh our dictionary.
-        # Because we return the child widget, this is fine.
-        # You can't have non list data, so enforce list type.
-        # Well, that won't work for mpl stuff, so.
-        #try:
+        test.oldValue = [test.data(0,0), test.data(1,0)]'''
+        self.changeItem(test)
         defaults = False
         updatedKeys = None
         # TEST code
@@ -347,7 +366,6 @@ class newButton():
     def __init__(self, parent, label, tooltip, pos, function, click_args=None):
         # pos should be an x,y tooltip
         # Generic implementation of a button.
-        # The function needs a pyqtSlot decorator, and should probably be pickable.
         self.button = QPushButton(label, parent)
         self.button.move(pos[0], pos[1])
         self.click_args = click_args
