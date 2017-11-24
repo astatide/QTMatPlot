@@ -2,7 +2,7 @@
 
 # Stuff to get the window open.
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit, QMenu, QAction, QDockWidget, QMainWindow, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit, QMenu, QAction, QDockWidget, QMainWindow, QHBoxLayout, QTextEdit
 from PyQt5.QtGui import QIcon, QCursor
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot
@@ -228,7 +228,7 @@ class MyMplCanvas(FigureCanvas):
             # For some reason, doing this screws everything up.  Have to look into that.
             #self.parent.mpl_dict['keyTree.Active'].setText(1, str(self.hoverAxes))
             #self.activeAxes = self.hoverAxes
-            FigureCanvas.mousePressEvent(self, event)
+            #FigureCanvas.mousePressEvent(self, event)
             self.update_figure()
 
     def returnAxesPos(self):
@@ -394,31 +394,67 @@ class App(QMainWindow):
         self.save_button = self.newButton(self, "Save", "Saves the Figure", (250,self.height-30), self.save_figure, click_args=None)
         self.load_button = self.newButton(self, "Load Yaml", "Loads the Config", (250,self.height-30), self.load_yaml, click_args=None)
         self.text = self.newTextBox(self, size=(0,0), pos=(self.save_button.button.width()+250, self.height-30), init_text="{}".format(kinetics))
+        #self.text.textBox.setGeometry(self.save_button.button.width()+self.load_button.button.width(), self.height-30, self.width-self.save_button.button.width(), 15)
+        self.text.textBox.resize(self.width-self.save_button.button.width(), 15)
         self.mplTree = self.newTree(self, self.mpl_dict, pos=(self.width-250,0), size=(250,self.height-30), col=1, function=self.updateFromDict, rows=True)
         self.dataTree = self.newTree(self, {'direct.h5': dict(kinetics)}, pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText, function2=self.updateFromDict, get_figures=self.mplTree.getFigures, mpl=self.mpl_dict)
         # Do up some docks for everything!
         self.setCentralWidget(self.main_widget)
 
         self.mpldock = QDockWidget("Plotting Dictionary", self)
-        self.mpldock.setWidget(self.mplTree.tree)
+        self.mpllayout = QVBoxLayout(self.mpldock)
+        self.mplwidget = QWidget(self)
+        # Create buttons...
+        self.addValue = self.newButton(self, "+", "Adds a new key: value", (0,0), self.addToDict, click_args=None)
+        self.delValue = self.newButton(self, "-", "Deletes key: value pair", (0,0), self.delFromDict, click_args=None)
+        # Add a new layout for them.
+        self.mplButtonlayout = QHBoxLayout(self.mplwidget)
+        self.mplButtonwidget = QWidget(self)
+        self.mplButtonwidget.setLayout(self.mplButtonlayout)
+        self.mplButtonlayout.addWidget(self.addValue.button)
+        self.mplButtonlayout.addWidget(self.delValue.button)
+        
+        self.mpllayout.addWidget(self.mplTree.tree)
+        self.mpllayout.addWidget(self.mplButtonwidget)
+        self.mplwidget.setLayout(self.mpllayout)
+        self.mpldock.setWidget(self.mplwidget)
 
+        # Now the data dock...
         self.datadock = QDockWidget("Dataset", self)
-        self.datadock.setWidget(self.dataTree.tree)
+        self.datalayout = QVBoxLayout(self.datadock)
+        self.datawidget = QWidget(self)
+        # Create buttons
+        self.loadData = self.newButton(self, "Load Data", "Adds a new key: value", (640,0), self.addToDict, click_args=None)
+        #self.dataButtonlayout = QHBoxLayout(self.datawidget)
+        #self.dataButtonwidget = QWidget(self)
+        #self.dataButtonwidget.setLayout(self.dataButtonlayout)
+        #self.dataButtonlayout.addWidget(self.loadData.button)
+        #self.dataButtonlayout.addWidget(self.delValue.button)
+        self.datalayout.addWidget(self.dataTree.tree)
+        #self.datalayout.addWidget(self.dataButtonwidget)
+        self.datalayout.addWidget(self.loadData.button)
+        self.datawidget.setLayout(self.datalayout)
+        self.datadock.setWidget(self.datawidget)
 
         # Create the dock, create a new widget, create a layout for that widget, then add all the widgets into that widget, then add that widget to th dock.  Ha
         self.textdock = QDockWidget("", self)
         self.bwidget = QWidget(self)
-        self.toolbar = NavigationToolbar(self.dc, self.bwidget)
-        self.dc.mpl_connect('key_press_event', self.on_key_press)
+        #self.toolbar = NavigationToolbar(self.dc, self.bwidget)
+        #self.dc.mpl_connect('key_press_event', self.on_key_press)
         self.blayout = QHBoxLayout(self.textdock)
         self.blayout.addWidget(self.text.textBox)
         self.blayout.addWidget(self.save_button.button)
         self.blayout.addWidget(self.load_button.button)
-        self.blayout.addWidget(self.toolbar)
+        #self.blayout.addWidget(self.toolbar)
+        #self.bwidget.setMinimumHeight((self.width-self.save_button.button.width(), 30))
+        #self.text.textBox.setMinimumHeight((10))
+        print(dir(self.text.textBox))
+        #self.text.textBox.setMaximumHeight((10))
         self.bwidget.setLayout(self.blayout)
         # Remove title bar.
         self.textdock.setTitleBarWidget(QWidget())
         self.textdock.setWidget(self.bwidget)
+        self.textdock.resize(self.width-self.save_button.button.width(), 30)
 
         self.addDockWidget(Qt.LeftDockWidgetArea, self.mpldock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.datadock)
@@ -443,6 +479,12 @@ class App(QMainWindow):
         #def __init__(self, parent, size, pos, init_text=""):
         #layout.addChildWidget(self.dataTree)
         self.show()
+
+    def addToDict(self):
+        pass
+
+    def delFromDict(self):
+        pass
 
     def save_figure(self):
         self.fig.savefig("test.pdf")
@@ -830,7 +872,10 @@ class App(QMainWindow):
     class newTextBox():
         def __init__(self, parent, size, pos, init_text=""):
             self.textBox = QLineEdit(parent)
+            #self.textBox = QTextEdit(parent)
             self.textBox.setText(init_text)
+            if size and pos:
+                self.textBox.setGeometry(pos[0], pos[1], size[0], size[1])
 
         def showText(self, text):
             self.textBox.setText(text)
