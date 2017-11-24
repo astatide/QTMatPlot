@@ -163,6 +163,25 @@ class mplCanvas(FigureCanvas):
             #self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']))
             gridspec_kw = self.parent.mpl_dict['gridspec_kw']
             subplot_kw = self.parent.mpl_dict['subplot_kw']
+            for k, v in gridspec_kw.items():
+                gridspec_kw[str(k)] = float(v)
+            if "GridRatio" in self.parent.mpl_dict:
+                # We want to keep our x to y ratio at some value, here... which is
+                # going to be based on
+                # So, let's see...
+                #for k in ['bottom', 'top']:
+                    # Calculate target height
+                    # ratio = width * (top - bottom) / ncols
+                    # gridsize: (top-bottom) = ratio*ncols/width
+                print((self.parent.mpl_dict['GridRatio'][0]), (d['Columns']), (d['figsize']['width']))
+                gridH = (float(ast.literal_eval(self.parent.mpl_dict['GridRatio'])[0]) * float(d['Columns']) / float(d['figsize']['width'])) / 2
+                gridW = (float(ast.literal_eval(self.parent.mpl_dict['GridRatio'])[1]) * float(d['Rows']) / float(d['figsize']['height'])) / 2
+                gridspec_kw['top'] = 0.5 + gridW
+                gridspec_kw['bottom'] = 0.5 - gridW
+                gridspec_kw['left'] = 0.5 - gridH
+                gridspec_kw['right'] = 0.5 + gridH
+                self.parent.mpl_dict['gridspec_kw'] = gridspec_kw
+                #for k in ['left', 'right']
             self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']), gridspec_kw=gridspec_kw, **subplot_kw)
             self.al = {}
             for rows in range(0, int(self.parent.mpl_dict['Rows'])):
