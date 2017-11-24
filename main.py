@@ -170,44 +170,20 @@ class App(QMainWindow):
         self.show()
 
     def addToDict(self):
-        '''keys = self.mplTree.returnHighlightedDictionary()
-        if keys is not None and len(keys) > 1:
-            ddict = self.mplTree.getParentDict(self.mpl_dict, keys[:-1])
-        else:
-            ddict = self.mpl_dict
-        for i in range(0, 99):
-            if 'New.{}'.format not in ddict:
-                ddict['New.{}'.format(i)] = 'None'
-                break
-            else:
-                print(ddict['New.{}'.format(i)])
-                pass
-        self.mplTree.updateTree()'''
-        print(self.mplTree.tree.selectedItems())
         try:
-            self.mplTree.addItem(self.mplTree.tree.selectedItems()[0].parent(), ddict=['New', None])
+            for i in range(0,99):
+                if 'New: {}'.format(i) not in self.mpl_dict:
+                    self.mplTree.addItem(self.mplTree.tree.selectedItems()[0].parent(), ddict=['New: {}'.format(i), None])
+                    break
         except:
-            self.mplTree.addItem(self.mplTree.tree.topLevelItem(0), ddict=['New', None])
+            for i in range(0,99):
+                if 'New: {}'.format(i) not in self.mpl_dict:
+                    self.mplTree.addItem(self.mplTree.tree.topLevelItem(0), ddict=['New: {}'.format(i), None])
+                    break
         self.mplTree.updateTree()
 
     def delFromDict(self):
-        '''print("DELETING")
-        keys = self.mplTree.returnHighlightedDictionary()
-        if keys is not None:
-            ddict = self.mplTree.getParentDict(self.mpl_dict, keys[:-1])
-        else:
-            ddict = self.mpl_dict
-        print(ddict[keys[-1]], keys[-1])
-        print(self.mpl_dict)
-        del ddict[keys[-1]]
-        if keys[-1] in ddict:
-            print("STILL HERE")
-        test = self.mplTree.tree.selectedItems()[0]
-        try:
-            self.mplTree.tree.takeTopLevelItem(int(self.mplTree.tree.indexFromItem(test).row()))
-        except:
-            test.parent().removeChild(test)
-        self.mplTree.updateTree()'''
+
         self.mplTree.removeItem(self.mplTree.tree.selectedItems()[0])
 
 
