@@ -481,7 +481,19 @@ class App(QMainWindow):
         self.show()
 
     def addToDict(self):
-        pass
+        print(self.mplTree.returnHighlightedDictionary())
+        keys = self.mplTree.returnHighlightedDictionary()
+        if keys is not None and len(keys) > 1:
+            ddict = self.mplTree.getParentDict(self.mpl_dict, keys[:-1])
+        else:
+            ddict = self.mpl_dict
+        for i in range(0, 99):
+            if 'New.{}'.format not in ddict:
+                ddict['New.{}'.format(i)] = 'None'
+                break
+            else:
+                pass
+        self.mplTree.updateTree()
 
     def delFromDict(self):
         pass
@@ -818,6 +830,13 @@ class App(QMainWindow):
                     if type(ret_item.get(key)) == dict:
                         ret_item = ret_item.get(key)
             return ret_item
+
+        def returnHighlightedDictionary(self):
+            try:
+                location = self.getParentItems(self.tree.selectedItems()[0])
+            except:
+                location = None
+            return location
 
         def onItemChanged(self, test):
             # This works.
