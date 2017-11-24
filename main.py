@@ -183,8 +183,6 @@ class MyMplCanvas(FigureCanvas):
             for cols in range(0, int(self.parent.mpl_dict['Columns'])):
                 # Throw in the axes object.
                 for dset in range(0, int(self.parent.mpl_dict['Datasets'])):
-                    print("UPDATING DATASETS")
-                    print(self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'])
                     if self.parent.mpl_dict['Active'] == str((rows,cols)):
                         self.axes[rows,cols].spines['bottom'].set_color("r")
                         self.axes[rows,cols].spines['left'].set_color("r")
@@ -218,7 +216,6 @@ class MyMplCanvas(FigureCanvas):
             y1 = pnts[0,1]
             y2 = pnts[1,1]
             # THIS is the correct transformation.
-            #print([[x1, (h*dpi)-y2], [x2, (h*dpi)-y1]], x, y)
 
             if x > x1 and x < x2 and y > (h*dpi)-y2 and y < (h*dpi)-y1:
                 self.hoverAxes = str((i,j))
@@ -236,7 +233,6 @@ class MyMplCanvas(FigureCanvas):
         return_list = []
         for i in range(0, self.axes.shape[0]):
             for j in range(0, self.axes.shape[1]):
-                #print(dir(self.axes[i,j]))
                 #return_list.append((self.axes[i,j].get_position(), i, j))
                 return_list.append((self.axes[i,j].get_window_extent(), i, j))
         return return_list
@@ -284,7 +280,6 @@ class MyMplCanvas(FigureCanvas):
             except:
                 # Definitely a tuple.
                 t = ast.literal_eval(i)
-                print(t)
                 try:
                     # Some complicated slicing, here.
                     # THIS IS FOR A 3D DATASET.
@@ -481,7 +476,6 @@ class App(QMainWindow):
         self.show()
 
     def addToDict(self):
-        print(self.mplTree.returnHighlightedDictionary())
         keys = self.mplTree.returnHighlightedDictionary()
         if keys is not None and len(keys) > 1:
             ddict = self.mplTree.getParentDict(self.mpl_dict, keys[:-1])
@@ -492,11 +486,28 @@ class App(QMainWindow):
                 ddict['New.{}'.format(i)] = 'None'
                 break
             else:
+                print(ddict['New.{}'.format(i)])
                 pass
         self.mplTree.updateTree()
 
     def delFromDict(self):
-        pass
+        print("DELETING")
+        keys = self.mplTree.returnHighlightedDictionary()
+        if keys is not None:
+            ddict = self.mplTree.getParentDict(self.mpl_dict, keys[:-1])
+        else:
+            ddict = self.mpl_dict
+        print(ddict[keys[-1]], keys[-1])
+        print(self.mpl_dict)
+        del ddict[keys[-1]]
+        if keys[-1] in ddict:
+            print("STILL HERE")
+        test = self.mplTree.tree.selectedItems()[0]
+        try:
+            self.mplTree.tree.takeTopLevelItem(int(self.mplTree.tree.indexFromItem(test).row()))
+        except:
+            test.parent().removeChild(test)
+        self.mplTree.updateTree()
 
     def save_figure(self):
         self.fig.savefig("test.pdf")
@@ -564,7 +575,6 @@ class App(QMainWindow):
                     # Here, we're updating from the defaults.
                     new_dict = {}
                     for key, val in self.mpl_dict['FigDefaults'].items():
-                        #print(key,val)
                         if updatedKeys == None:
                             new_dict[key] = copy.deepcopy(val)
                         else:
@@ -578,7 +588,6 @@ class App(QMainWindow):
                     for dset in range(0, int(self.mpl_dict['Datasets'])):
                         new_dict = {}
                         for key, val in self.mpl_dict['DSetDefaults'].items():
-                            print(key,val)
                             if updatedKeys == None:
                                 new_dict[key] = copy.deepcopy(val)
                             else:
@@ -592,7 +601,6 @@ class App(QMainWindow):
                         self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = copy.deepcopy(new_dict)
 
                 # Throw in the axes object.
-                #print(self.mpl_dict['Figures'][(rows,cols)])
         #self.dc.update_figure(defaults)
         if not firstrun:
             self.refreshWidgets(new=defaults)
@@ -618,7 +626,6 @@ class App(QMainWindow):
 
     def wheelEvent(self, e):
         # This is what happens when we scroll.
-        #print(self.tree.data)
         pass
 
     # Data loading; for now, just do hdf5
@@ -689,13 +696,9 @@ class App(QMainWindow):
             #i += 1
             #e_action = QAction(str(event), self.tree)
             #self.menu.addAction(e_action)
-            #print(self.menu.activeAction())
             self.menu.popup(QCursor.pos())
 
         def reassignMpl(self, location):
-            #print(i)
-            #print(self.menu.actionAt(i))
-            #print(i.i)
             #key = self.itemDict[i.i]['key']
             #dkey = self.itemDict[i.i]['dkey']
             #location = self.itemDict[i.i]['location']
@@ -707,14 +710,11 @@ class App(QMainWindow):
             #tmp['loc'] = location
             # Forc dictionary update?
             #d = copy.deepcopy(self.parent.mpl_dict)
-            #print(key, dkey, location)
             #self.parent.mpl_dict['Figures'][str(key)]['data'][str(dkey)]['loc'] = location
             #self.parent.mpl_dict['Figures'][str(key)]['data'][str(dkey)]['valTree.loc'].setText(0, str(location))
             key = self.parent.mpl_dict['Active']
             self.parent.mpl_dict['Figures'][str(key)]['data']['0']['loc'] = location
             self.parent.mpl_dict['Figures'][str(key)]['Update'] = True
-            print("GOING NOW!")
-            print(self.parent.mpl_dict['keyTree'])
             self.parent.mpl_dict['keyTree']['Figures'][str(key)]['data']['0']['keyTree.loc'].setText(1, str(location))
             #self.parent.mpl_dict = copy.deepcopy(d)
 
@@ -749,7 +749,6 @@ class App(QMainWindow):
             ddc = copy.copy(dict_data)
             con = False
             for key, val in sorted(ddc.items(), key= lambda x: str(x)):
-                print(key,val)
                 if type(key) == str and len(key) >= 6:
                     if key[0:7] != 'keyTree' and key[0:7] != 'valTree':
                         con = True
@@ -815,14 +814,11 @@ class App(QMainWindow):
                             else:
                                 if self.editable:
                                     keyTree.setFlags(keyTree.flags() | QtCore.Qt.ItemIsEditable)
-                                if key == 'dpi':
-                                    print(str(val))
                                 keyTree.setText(1, str(val))
                                 keyTree.oldValue.append((str(val)))
             self.tree.setColumnCount(self.col)
 
         def getParentItems(self, widget, ret_list=None):
-            #print(widget.text(0))
             if ret_list == None:
                 ret_list = []
             if widget is not None:
@@ -832,7 +828,6 @@ class App(QMainWindow):
             return ret_list
 
         def getParentDict(self, ddict, keys, ret=None):
-            print(keys, ret)
             ret_item = ddict
             for key in keys:
                 if hasattr(ret_item, 'get'):
@@ -852,16 +847,10 @@ class App(QMainWindow):
             keys = self.getParentItems(test)
             item = self.getParentDict(self.data, keys)
             treeItem = self.getParentDict(self.parent.mpl_dict['keyTree'], keys)
-            print("CHANGING DATA")
-            print(item, keys[-1], test.data(0,0), test.data(1,0))
-            print(test.data(0,0), test.data(1,0))
             # Now we can ignore th other stuff.
-            print(test.oldValue)
             del item[test.oldValue[0]]
-            #print(treeItem)
             # Remove the tree, and just recreate it.
             # You do need to have it selected to edit it.  Not sure this is forever behavior.
-            #print(self.tree.indexOfTopLevelItem())
             # THIS FUCKING COMMAND KNOWS WHAT I'M TALKING ABOUT.
             # WE NEED THE ROW, GET FUCKED.
             #self.tree.takeTopLevelItem(int(self.tree.indexFromItem(treeItem['keyTree.{}'.format(test.oldValue[0])]).row()))
@@ -872,7 +861,6 @@ class App(QMainWindow):
             #self.tree.removeChild(self.tree.indexFromItem(treeItem['keyTree.{}'.format(test.oldValue[0])]))
             del treeItem['keyTree.{}'.format(test.oldValue[0])]
             #del treeItem['keyTree.{}'.format(test.data(0,0))]
-            print(test.data(1,0))
             #try:
                 # Try to see if we can't convert to a real data type.
                 # On the other hand, maybe we don't always want to do this?
@@ -882,7 +870,6 @@ class App(QMainWindow):
             item[keys[-1]] = test.data(1,0)
             self.data = self.parent.mpl_dict
             test.oldValue = [test.data(0,0), test.data(1,0)]
-            print(self.parent.mpl_dict['Colors'])
             # Refresh our dictionary.
             # Because we return the child widget, this is fine.
             # You can't have non list data, so enforce list type.
