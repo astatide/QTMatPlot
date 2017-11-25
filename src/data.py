@@ -27,7 +27,8 @@ sns.set_palette('deep')
 
 import yaml
 import os
-import pickle
+import _pickle as pickle
+import pandas as pd
 # and here http://www.boxcontrol.net/embedding-matplotlib-plot-on-pyqt5-gui.html
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -54,19 +55,40 @@ class dataLoader():
         try:
             newFile = self.loadHDF5(filename)
         except:
-            try:
-                newFile = self.loadPickle(filename)
-            except:
-                newFile = self.loadYaml(filename)
-        self.fileList.append(filename)
-        self.dataStructure[os.path.basename(filename)] = newFile
+            #try:
+            newFile = self.loadPickle(filename)
+            '''except:
+                try:
+                    newFile = self.loadYaml(filename)
+                except:
+                    # Okay, so that didn't work.  Fail out.
+                    filename = None'''
+        if filename is not None:
+            self.fileList.append(str(filename))
+            self.dataStructure[filename] = newFile
+        else:
+            pass
 
     def loadHDF5(self, filename):
-        f = h5py.File(filename, 'r')
-        return dict(f)
+        try:
+            # Pandas dataframe
+            # Huh.  This doesn't fail, though.
+            #f = pd.HDFStore(filename)
+            #return f
+            raise Exception
+        except:
+            # NOT a Pandas Dataframe
+            f = h5py.File(filename, 'r')
+            return dict(f)
 
     def loadPickle(self, filename):
-        f = pickle.load( open(filename, 'r') )
+        print(filename)
+        try:
+            # Appropriate for Python3 pickles
+            f = pickle.load( open(filename, 'rb') )
+        except:
+            # Is it a python2?
+            f = pickle.load( open(filename, 'rb'), encoding='latin1' )
         return f
 
     def loadYaml(self, filename):

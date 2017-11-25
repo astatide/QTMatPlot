@@ -278,12 +278,38 @@ class mplCanvas(FigureCanvas):
 
     def translate_location(self, location):
         loc = self.data
-        for i in ast.literal_eval(location):
+        df = False
+        for ii, i in enumerate(ast.literal_eval(location)):
             try:
-                # Is it a string?
-                loc = loc[i]
+                if "pandas_type" in loc[i].attrs:
+                    # This is a pandas dataset!
+                    # We need to treat it a bit differently.
+                    #tree_dict[key] = dict_data.get(item)
+                    # This should handle it, despite being loaded as an HDF5.
+                    print("FUCKING PANDAS")
+                    try:
+                        import pandas as pd
+                        import os
+                        f = pd.HDFStore(ast.literal_eval(location)[0], mode='r')
+                        print("PD: 1")
+                        print(os.path.join('/',*ast.literal_eval(location)[1:ii+1]))
+                        loc = f[os.path.join('/',*ast.literal_eval(location)[1:ii+1])]
+                        print("PD: 2")
+                        print(loc)
+                        df = True
+                        return loc
+                    except Exception as e:
+                        print(e)
+                    # Is it a string?
             except:
-                # Definitely a tuple.
+                pass
+            try:
+                if df == True:
+                    raise Exception
+                else:
+                    loc = loc[i]
+            except:
+                # Definitely a tuple.  Unless it isn't.
                 t = ast.literal_eval(i)
                 try:
                     # Some complicated slicing, here.
@@ -304,7 +330,12 @@ class mplCanvas(FigureCanvas):
                     else:
                         index = (slice(None, None, None), slice(t, t+1, None))
                 loc = loc[index]
-        return loc.flatten()
+        try:
+            return loc.flatten()
+        except:
+            print(loc)
+            return loc
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

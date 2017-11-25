@@ -176,7 +176,10 @@ class App(QMainWindow):
         # First, load in the new file.
         # Then, refresh the widget.
         self.dataLoader.loadNewFile()
+        self.mpl_dict['FilesToLoad'] = self.dataLoader.fileList
         self.dataTree.updateTree()
+        print("FILE LOADED")
+        self.mplTree.updateTree()
 
     def addToDict(self):
         try:

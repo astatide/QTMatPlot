@@ -26,6 +26,7 @@ sns.set(font='sans-serif', style='ticks')
 sns.set_palette('deep')
 
 import yaml
+import numba as nb
 
 # and here http://www.boxcontrol.net/embedding-matplotlib-plot-on-pyqt5-gui.html
 
@@ -152,13 +153,14 @@ class newTree():
     def getFigures(self):
         return self.figures
 
-    def handleDict(self, dict_data, tree, tree_dict={},new=False):
+    def handleDict(self, dict_data, tree, tree_dict={},new=False, i=0):
         # We can actually have numerous structures, here.
         # Why not keep track of it, for now?
         # We want to do a reverse lookup
         ddc = copy.copy(dict_data)
         con = False
         for key, val in sorted(ddc.items(), key= lambda x: str(x)):
+            i += 1
             if type(key) == str and len(key) >= 6:
                 if key[0:7] != 'keyTree' and key[0:7] != 'valTree':
                     con = True
@@ -167,19 +169,37 @@ class newTree():
             else:
                 con = True
             if con:
-                if 'keyTree.{}'.format(key) not in tree_dict or new:
+                if new:
+                    keyTree = QTreeWidgetItem(tree, [str(key)])
+                    keyTree.oldValue = [str(key)]
+                    tree_dict['keyTree.{}'.format(key)] = keyTree
+                else:
+                    try:
+                        keyTree = tree_dict['keyTree.{}'.format(key)]
+                        keyTree.setText(0, str(key))
+                    except KeyError:
+                        keyTree = QTreeWidgetItem(tree, [str(key)])
+                        keyTree.oldValue = [str(key)]
+                        tree_dict['keyTree.{}'.format(key)] = keyTree
+                '''if 'keyTree.{}'.format(key) not in tree_dict or new:
                     keyTree = QTreeWidgetItem(tree, [str(key)])
                     keyTree.oldValue = [str(key)]
                     tree_dict['keyTree.{}'.format(key)] = keyTree
                 else:
                     keyTree = tree_dict['keyTree.{}'.format(key)]
-                    keyTree.setText(0, str(key))
+                    keyTree.setText(0, str(key))'''
                 if key == 'Figures':
                     self.figures = keyTree
+                if type(val) == h5py._hl.group.Group:
+                        #tree_dict[key] =
+                        # This is a normal HDF5 group.  Treat it appropriately.
+                    if key not in tree_dict:
+                        tree_dict[key] = {}
+                    self.handleDict(val, keyTree, new=new, tree_dict=tree_dict[key], i=i)
                 if type(val) == dict:
                     if key not in tree_dict:
                         tree_dict[key] = {}
-                    self.handleDict(val, keyTree, new=new, tree_dict=tree_dict[key])
+                    self.handleDict(val, keyTree, new=new, tree_dict=tree_dict[key], i=i)
                 elif type(val) == h5py._hl.dataset.Dataset:
                     # Let's handle 2 and 3 dimensional data for now.  Anything more than that and it just... well, it won't plot anyway.
                     # I know this shouldn't go into the handlDict function, but hey.  At least rename it.
@@ -207,7 +227,7 @@ class newTree():
                                     sdict[(i,j)] = str(val.shape)
                     if key not in tree_dict:
                         tree_dict[key] = {}
-                    self.handleDict(sdict, keyTree, new=new, tree_dict=tree_dict[key])
+                    self.handleDict(sdict, keyTree, new=new, tree_dict=tree_dict[key], i=i)
                 else:
                     # We want this to be like rows, not columns
                     if self.rows:
