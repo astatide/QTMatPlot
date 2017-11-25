@@ -2,7 +2,7 @@
 
 # Stuff to get the window open.
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit, QMenu, QAction, QDockWidget, QMainWindow, QHBoxLayout, QTextEdit
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit, QMenu, QAction, QDockWidget, QMainWindow, QHBoxLayout, QTextEdit, QFileDialog
 from PyQt5.QtGui import QIcon, QCursor
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot
@@ -26,38 +26,53 @@ sns.set(font='sans-serif', style='ticks')
 sns.set_palette('deep')
 
 import yaml
-
+import os
+import pickle
 # and here http://www.boxcontrol.net/embedding-matplotlib-plot-on-pyqt5-gui.html
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.backend_bases import key_press_handler
 
-# Button Functions
-@pyqtSlot()
-def button_test():
-    print("We're clicking a button, wheee")
-
-def remove_trees(idict, odict=None):
-    if odict == None:
-        odict = {}
-    for key, val in idict.items():
-        if type(key) == str and len(key) >= 6:
-            if key[0:7] != 'valTree' and key[0:7] != 'keyTree' and key != 'Update':
-                if type(val) == dict:
-                    odict[key] = copy.deepcopy(remove_trees(val))
-                else:
-                    odict[key] = copy.deepcopy(val)
-        else:
-            if type(val) == dict:
-                odict[key] = copy.deepcopy(remove_trees(val))
-            else:
-                odict[key] = copy.deepcopy(val)
-    return odict
-
 class dataLoader():
-    def __init__(self, fileList):
+    def __init__(self, parent, fileList):
+        # We want this to handle loading and structuring data.
+        self.fileList = fileList
+        self.dataStructure = {}
+        # Parent is our parent widget (the main app)
+        self.parent = parent
         pass
+    def loadFile(self, filename):
+        pass
+
+    def loadAllFiles(self, filename):
+        pass
+
+    def loadNewFile(self):
+        filename, _ = QFileDialog.getOpenFileName(self.parent, 'Open Data File', os.getcwd())
+        print(filename)
+        try:
+            newFile = self.loadHDF5(filename)
+        except:
+            try:
+                newFile = self.loadPickle(filename)
+            except:
+                newFile = self.loadYaml(filename)
+        self.fileList.append(filename)
+        self.dataStructure[os.path.basename(filename)] = newFile
+
+    def loadHDF5(self, filename):
+        f = h5py.File(filename, 'r')
+        return dict(f)
+
+    def loadPickle(self, filename):
+        f = pickle.load( open(filename, 'r') )
+        return f
+
+    def loadYaml(self, filename):
+        f = yaml.load( open(filename, 'r') )
+        return f
+
 
     def translate_location(self, location):
         loc = self.data
@@ -93,5 +108,3 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = App()
     sys.exit(app.exec_())
-
-

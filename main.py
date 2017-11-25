@@ -78,14 +78,15 @@ class App(QMainWindow):
         self.layout = QVBoxLayout(self.main_widget)
         kinetics = h5py.File('direct.h5', 'r')
         self.updateFromDict(True, firstrun=True)
-        self.dc = mplCanvas(self.main_widget, data_parent=self, width=10, height=8, dpi=100, data={'direct.h5': kinetics}, notify_func=self.notify)
+        self.dataLoader = dataLoader(self, ['direct.h5'])
+        self.dc = mplCanvas(self.main_widget, data_parent=self, width=10, height=8, dpi=100, data=self.dataLoader.dataStructure, notify_func=self.notify)
         self.save_button = newButton(self, "Save", "Saves the Figure", (250,self.height-30), self.save_figure, click_args=None)
         self.load_button = newButton(self, "Load Yaml", "Loads the Config", (250,self.height-30), self.load_yaml, click_args=None)
         self.text = newTextBox(self, size=(0,0), pos=(self.save_button.button.width()+250, self.height-30), init_text="{}".format(kinetics))
         #self.text.textBox.setGeometry(self.save_button.button.width()+self.load_button.button.width(), self.height-30, self.width-self.save_button.button.width(), 15)
         self.text.textBox.resize(self.width-self.save_button.button.width(), 15)
         self.mplTree = newTree(self, self.mpl_dict, pos=(self.width-250,0), size=(250,self.height-30), col=1, function=self.updateFromDict, rows=True)
-        self.dataTree = newTree(self, {'direct.h5': dict(kinetics)}, pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText, function2=self.updateFromDict, get_figures=self.mplTree.getFigures, mpl=self.mpl_dict)
+        self.dataTree = newTree(self, self.dataLoader.dataStructure, pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText, function2=self.updateFromDict, get_figures=self.mplTree.getFigures, mpl=self.mpl_dict)
         # Do up some docks for everything!
         self.setCentralWidget(self.main_widget)
 
@@ -112,7 +113,7 @@ class App(QMainWindow):
         self.datalayout = QVBoxLayout(self.datadock)
         self.datawidget = QWidget(self)
         # Create buttons
-        self.loadData = newButton(self, "Load Data", "Adds a new key: value", (640,0), self.addToDict, click_args=None)
+        self.loadData = newButton(self, "Load Data", "Adds a new key: value", (640,0), self.loadNewFile, click_args=None)
         self.sendData = newButton(self, "Plot", "Plot Active Dataset", (640,0), self.dataTree.reassignMplFromHighlightedData, click_args=None)
         #self.dataButtonlayout = QHBoxLayout(self.datawidget)
         #self.dataButtonwidget = QWidget(self)
@@ -170,6 +171,12 @@ class App(QMainWindow):
         self.show()
         self.dc.update_figure()
         self.updateFromDict(True)
+
+    def loadNewFile(self):
+        # First, load in the new file.
+        # Then, refresh the widget.
+        self.dataLoader.loadNewFile()
+        self.dataTree.updateTree()
 
     def addToDict(self):
         try:
