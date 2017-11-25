@@ -297,6 +297,7 @@ class mplCanvas(FigureCanvas):
                         print("PD: 2")
                         print(loc)
                         df = True
+                        f.close()
                         return loc
                     except Exception as e:
                         print(e)
