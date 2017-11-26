@@ -89,6 +89,8 @@ class App(QMainWindow):
         self.mplTree = newTree(self, self.mpl_dict, pos=(self.width-250,0), size=(250,self.height-30), col=1, function=self.updateFromDict, rows=True)
         self.dataTree = newTree(self, self.dataLoader.dataStructure, pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText, function2=self.updateFromDict, get_figures=self.mplTree.getFigures, mpl=self.mpl_dict)
         self.dataTree.tree.setDragEnabled(True)
+        self.mplTree.tree.header().resizeSection(0, 175)
+        self.dataTree.tree.header().resizeSection(0, 200)
         # Do up some docks for everything!
         self.setCentralWidget(self.main_widget)
 

@@ -172,7 +172,8 @@ class newTree():
         try:
             od = OrderedDict(sorted(ddc.items(), key= lambda i: self.parent.mpl_dict['keyOrder'].index(i[0])))
         except:
-            od = ddc
+            # Default to alphabetical order
+            od = OrderedDict(sorted(ddc.items(), key= lambda x: str(x)))
         for key, val in od.items():
             if type(key) == str and len(key) >= 6:
                 #if key[0:7] != 'keyTree' and key[0:7] != 'valTree':
