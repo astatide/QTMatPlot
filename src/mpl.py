@@ -68,6 +68,8 @@ class mplCanvas(FigureCanvas):
         FigureCanvas.__init__(self, self.fig)
         # Track the mouse position.
         self.setMouseTracking(True)
+        # Accept drag/drop events  Although this doesn't seem to work.
+        self.setAcceptDrops(True)
         # Can't remembr what this is for; qt, most likely.
         self.hoverAxes = None
         self.activeAxes = None
@@ -96,63 +98,47 @@ class mplCanvas(FigureCanvas):
     def plot(self, pd, index, ax):
         # pd is the plot dictionary
         ax.tick_params(axis='both', labelsize=float(self.parent.mpl_dict['fontsize']['fontsize']), length=int(self.parent.mpl_dict['fontsize']['ticksize']))
-        if pd['ylabel'] is not None:
-            ax.set_ylabel(pd['ylabel'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
-        if pd['xlabel'] is not None:
-            ax.set_xlabel(pd['xlabel'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
-        if pd['title'] is not None:
-            ax.set_title(pd['title'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
-        if pd['data'][str(index)]['loc'] != 'None':
-            if pd['type'] == 'plot':
-                try:
-                    subplot_kwargs = dict(pd['data'][str(index)])
-                    '''del subplot_kwargs['loc']
-                    del subplot_kwargs['range']
-                    for k in subplot_kwargs.keys():
-                        if type(k) == str and len(k) >= 6:
-                            if k[0:7] == 'valTree' or k[0:7] == 'keyTree':
-                                del subplot_kwargs[k]'''
-                    subplot_kwargs = remove_trees(subplot_kwargs)
-                    if subplot_kwargs['color'] == -1:
-                        subplot_kwargs['color'] = self.parent.mpl_dict['Colors'][str(index)]
-                    handle = ax.plot(self.translate_location(pd['data'][str(index)]['loc']), **subplot_kwargs)
-                    return handle
-                except Exception as e:
-                    if self.notify_func is not None:
-                        self.notify_func(e)
-                    else:
-                        pass
-            if pd['type'] == 'shade':
-                #try:
-                if True:
-                    '''subplot_kwargs = {}
-                    for key,val in pd['data'][str(index)].items():
-                        if type(key) == str and len(key) >= 6:
-                            if key[0:7] != 'valTree' and key[0:7] != 'keyTree':
-                                if key[0:7] != 'valtree' and key[0:7] != 'keytree':
-                                    subplot_kwargs[key] = val
-                        else:
-                            subplot_kwargs[key] = val'''
-                    subplot_kwargs = dict(pd['data'][str(index)])
-                    subplot_kwargs = remove_trees(subplot_kwargs)
-                    del subplot_kwargs['loc']
-                    del subplot_kwargs['range']
-                    if subplot_kwargs['color'] == -1:
-                        subplot_kwargs['color'] = str(self.parent.mpl_dict['Colors'][index])
-                    elif str(subplot_kwargs['color'])[0] == "#":
-                        pass
-                    else:
-                        subplot_kwargs['color'] = self.parent.mpl_dict['Colors'][int(subplot_kwargs['color'])]
-                    ax.plot(self.translate_location(pd['data'][str(index)]['loc'])['expected'][:], **subplot_kwargs)
-                    subplot_kwargs['alpha'] = .3
-                    handle = ax.fill_between(range(0, self.translate_location(pd['data'][str(index)]['loc'])['expected'].shape[0]), self.translate_location(pd['data'][str(index)]['loc'])['ci_ubound'][:], self.translate_location(pd['data'][str(index)]['loc'])['ci_lbound'][:], **subplot_kwargs)
-                    return handle
-                '''except Exception as e:
-                    if self.notify_func is not None:
-                        self.notify_func(e)
-                    else:
-                        pass'''
-                #self.axes
+        # Here's where we're going to handle dictionary inheritance.
+        sk = dict(self.parent.mpl_dict['DSetDefaults'])
+        fk = dict(self.parent.mpl_dict['FigDefaults'])
+        for k, v in pd['data'][str(index)].items():
+            if v is not None or v != "None":
+                sk[k] = copy.copy(v)
+        for k, v in pd.items():
+            if k != "data":
+                if v is not None or v != "None":
+                    if k == 'color' and str(v) == "-1":
+                        fk[k] = copy.copy(v)
+                else:
+                    fk[k] = copy.copy(v)
+        if fk['ylabel'] is not None:
+            ax.set_ylabel(fk['ylabel'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
+        if fk['xlabel'] is not None:
+            ax.set_xlabel(fk['xlabel'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
+        if fk['title'] is not None:
+            ax.set_title(fk['title'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
+        if sk['loc'] != 'None':
+            loc = copy.deepcopy(sk['loc'])
+            irange = copy.deepcopy(sk['range'])
+            orange = None
+            plotfuncstr = fk['type'].split('.')
+            module = __import__(plotfuncstr[0])
+            plotfunc = getattr(module, plotfuncstr[1])
+            if sk['color'] == -1:
+                sk['color'] = str(self.parent.mpl_dict['Colors'][index])
+            elif str(sk['color'])[0] == "#":
+                pass
+            else:
+                sk['color'] = str(self.parent.mpl_dict['Colors'][int(sk['color'])])
+            del sk['loc']
+            del sk['range']
+            try:
+                handle = plotfunc(ax, self.translate_location(loc), irange, orange, sk)
+            except Exception as e:
+                if self.notify_func is not None:
+                    self.notify_func(e)
+                else:
+                    pass
 
     def updateFromDict(self):
         d = self.parent.mpl_dict
@@ -269,6 +255,15 @@ class mplCanvas(FigureCanvas):
             print("YAY")
             print(self.parent.mpl_dict['ActiveDSet'], self.parent.mpl_dict['Active'])
             self.update_figure()
+
+    def dragEnterEvent(self, event):
+        print(event)
+
+    def dragMoveEvent(self, event):
+        print(event)
+
+    def dropEvent(self, event):
+        print(event)
 
     def setOpenDSet(self, fig):
         if fig != "None":

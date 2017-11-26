@@ -20,7 +20,7 @@ FigDefaults:
   Update: true
   height: None
   title: ''
-  type: shade
+  type: src.shade
   width: None
   xlabel: ''
   ylabel: ''
