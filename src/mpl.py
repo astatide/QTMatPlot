@@ -230,6 +230,9 @@ class mplCanvas(FigureCanvas):
                         self.plot(self.parent.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols])
                         plotted = True
                 self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = False
+        # Update which dset is active.
+        if self.parent.mpl_dict['Active'] is not None:
+            self.setOpenDSet(self.parent.mpl_dict['Active'])
             #if plotted:
             #    self.fig.tight_layout()
 
@@ -257,12 +260,23 @@ class mplCanvas(FigureCanvas):
     def mousePressEvent(self, event):
         if self.hoverAxes is not None:
             self.parent.mpl_dict['Active'] = self.hoverAxes
+            self.setOpenDSet(self.parent.mpl_dict['Active'])
+            #if self.parent.mpl_dict['ActiveDSet'] == None:
             # For some reason, doing this screws everything up.  Have to look into that.
             #self.parent.mpl_dict['keyTree.Active'].setText(1, str(self.hoverAxes))
             #self.activeAxes = self.hoverAxes
             #FigureCanvas.mousePressEvent(self, event)
+            print("YAY")
+            print(self.parent.mpl_dict['ActiveDSet'], self.parent.mpl_dict['Active'])
             self.update_figure()
 
+    def setOpenDSet(self, fig):
+        if fig != "None":
+            self.parent.mpl_dict['ActiveDSet'] = None
+            for dset in range(0, int(self.parent.mpl_dict['Datasets'])):
+                if self.parent.mpl_dict['Figures'][str(fig)]['data'][str(dset)]['loc'] == "None":
+                    self.parent.mpl_dict['ActiveDSet'] = str(dset)
+                    break
     def returnAxesPos(self):
         return_list = []
         for i in range(0, self.axes.shape[0]):

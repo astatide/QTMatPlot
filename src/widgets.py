@@ -129,9 +129,10 @@ class newTree():
         # This function reassigns a plot to be the dataset in location.
         key = self.parent.mpl_dict['Active']
         if key is not None:
-            self.parent.mpl_dict['Figures'][str(key)]['data']['0']['loc'] = str(location)
+            dset = str(self.parent.mpl_dict['ActiveDSet'])
+            self.parent.mpl_dict['Figures'][str(key)]['data'][dset]['loc'] = str(location)
             self.parent.mpl_dict['Figures'][str(key)]['Update'] = True
-            self.parent.mpl_dict['keyTree']['Figures'][str(key)]['data']['0']['keyTree.loc'].setText(1, str(location))
+            self.parent.mpl_dict['keyTree']['Figures'][str(key)]['data'][dset]['keyTree.loc'].setText(1, str(location))
             self.parent.refreshWidgets()
 
     def updateData(data):
