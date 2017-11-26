@@ -2,7 +2,7 @@
 
 # Stuff to get the window open.
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit, QMenu, QAction, QDockWidget, QMainWindow, QHBoxLayout, QTextEdit
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit, QMenu, QAction, QDockWidget, QMainWindow, QHBoxLayout, QTextEdit, QLabel
 from PyQt5.QtGui import QIcon, QCursor
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot
@@ -115,7 +115,17 @@ class App(QMainWindow):
         # Create buttons
         self.loadData = newButton(self, "Load Data", "Adds a new key: value", (640,0), self.loadNewFile, click_args=None)
         self.sendData = newButton(self, "Plot", "Plot Active Dataset", (640,0), self.dataTree.reassignMplFromHighlightedData, click_args=None)
+
+        # Label and Combobox
         self.dsetBox = newComboBox(self, items=range(0, self.mpl_dict['Datasets']), function=None)
+        self.dsetLabel = QLabel()
+        self.dsetLabel.setText("DSet: ")
+        cboxLayout = QHBoxLayout(self.datadock)
+        cboxWidget = QWidget(self)
+        cboxLayout.addWidget(self.dsetLabel)
+        cboxLayout.addWidget(self.dsetBox.comboBox)
+        cboxLayout.addWidget(self.sendData.button)
+        cboxWidget.setLayout(cboxLayout)
         #self.dataButtonlayout = QHBoxLayout(self.datawidget)
         #self.dataButtonwidget = QWidget(self)
         #self.dataButtonwidget.setLayout(self.dataButtonlayout)
@@ -123,8 +133,8 @@ class App(QMainWindow):
         #self.dataButtonlayout.addWidget(self.delValue.button)
         self.datalayout.addWidget(self.dataTree.tree)
         #self.datalayout.addWidget(self.dataButtonwidget)
-        self.datalayout.addWidget(self.sendData.button)
-        self.datalayout.addWidget(self.dsetBox.comboBox)
+        #self.datalayout.addWidget(self.sendData.button)
+        self.datalayout.addWidget(cboxWidget)
         self.datalayout.addWidget(self.loadData.button)
         self.datawidget.setLayout(self.datalayout)
         self.datadock.setWidget(self.datawidget)
