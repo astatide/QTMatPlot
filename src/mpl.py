@@ -272,11 +272,12 @@ class mplCanvas(FigureCanvas):
 
     def setOpenDSet(self, fig):
         if fig != "None":
-            self.parent.mpl_dict['ActiveDSet'] = None
+            self.parent.mpl_dict['ActiveDSet'] = 0
             for dset in range(0, int(self.parent.mpl_dict['Datasets'])):
                 if self.parent.mpl_dict['Figures'][str(fig)]['data'][str(dset)]['loc'] == "None":
                     self.parent.mpl_dict['ActiveDSet'] = str(dset)
                     break
+
     def returnAxesPos(self):
         return_list = []
         for i in range(0, self.axes.shape[0]):

@@ -115,6 +115,7 @@ class App(QMainWindow):
         # Create buttons
         self.loadData = newButton(self, "Load Data", "Adds a new key: value", (640,0), self.loadNewFile, click_args=None)
         self.sendData = newButton(self, "Plot", "Plot Active Dataset", (640,0), self.dataTree.reassignMplFromHighlightedData, click_args=None)
+        self.dsetBox = newComboBox(self, items=range(0, self.mpl_dict['Datasets']), function=None)
         #self.dataButtonlayout = QHBoxLayout(self.datawidget)
         #self.dataButtonwidget = QWidget(self)
         #self.dataButtonwidget.setLayout(self.dataButtonlayout)
@@ -123,6 +124,7 @@ class App(QMainWindow):
         self.datalayout.addWidget(self.dataTree.tree)
         #self.datalayout.addWidget(self.dataButtonwidget)
         self.datalayout.addWidget(self.sendData.button)
+        self.datalayout.addWidget(self.dsetBox.comboBox)
         self.datalayout.addWidget(self.loadData.button)
         self.datawidget.setLayout(self.datalayout)
         self.datadock.setWidget(self.datawidget)
@@ -233,6 +235,10 @@ class App(QMainWindow):
         self.mplTree.parent.mpl_dict = self.mpl_dict
         self.dataTree.parent.mpl_dict = self.mpl_dict
         self.dc.parent.mpl_dict = self.mpl_dict
+        self.dsetBox.reInit(range(0, int(self.mpl_dict['Datasets'])))
+        if self.mpl_dict['Active'] is not None:
+            self.dc.setOpenDSet(self.mpl_dict['Active'])
+        self.dsetBox.comboBox.setCurrentIndex(self.dsetBox.comboBox.findText(str(self.mpl_dict['ActiveDSet'])))
         # Danger; recursion.
         '''if new:
             self.mplTree.tree.clear()
@@ -246,6 +252,8 @@ class App(QMainWindow):
 
     def updateFromDict(self, defaults=False, firstrun=False, updatedKeys=None):
         d = self.mpl_dict
+        # Update the comboBox
+
         for rows in range(0, int(self.mpl_dict['Rows'])):
             for cols in range(0, int(self.mpl_dict['Columns'])):
                 if not defaults:

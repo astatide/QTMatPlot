@@ -2,7 +2,7 @@
 
 # Stuff to get the window open.
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit, QMenu, QAction, QDockWidget, QMainWindow, QHBoxLayout, QTextEdit
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit, QMenu, QAction, QDockWidget, QMainWindow, QHBoxLayout, QTextEdit, QComboBox
 from PyQt5.QtGui import QIcon, QCursor
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot
@@ -428,6 +428,28 @@ class newButton():
         self.click_args = click_args
         self.function = function
         self.button.clicked.connect(self.function)
+
+class newComboBox():
+    def __init__(self, parent, items, function):
+        self.parent = parent
+        self.comboBox = QComboBox()
+        self.items = items
+        new_items = []
+        for item in items:
+            new_items.append(str(item))
+        self.comboBox.addItems(new_items)
+        self.function = function
+        self.comboBox.currentIndexChanged.connect(self.changeActiveDSet)
+
+    def reInit(self, items):
+        self.comboBox.clear()
+        new_items = []
+        for item in items:
+            new_items.append(str(item))
+        self.comboBox.addItems(new_items)
+
+    def changeActiveDSet(self):
+        self.parent.mpl_dict['ActiveDSet'] = self.comboBox.currentText()
 
     # For our buttons.
     @pyqtSlot()
