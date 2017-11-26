@@ -16,13 +16,9 @@ import seaborn as sns
 import h5py
 import ast
 import copy
-sns.set_style('ticks')
-sns.set_context('paper')
-sns.axes_style({'font.family': ['monospace'],
-                'font.sans-serif': ['monospace']
-                })
-sns.set(font='sans-serif', style='ticks')
-#sns.set_palette('husl')
+from matplotlib import rcParams
+#sns.set_style('ticks')
+#sns.set_context('paper')
 sns.set_palette('deep')
 
 import yaml
@@ -102,21 +98,24 @@ class mplCanvas(FigureCanvas):
         sk = dict(self.parent.mpl_dict['DSetDefaults'])
         fk = dict(self.parent.mpl_dict['FigDefaults'])
         for k, v in pd['data'][str(index)].items():
-            if v is not None or v != "None":
-                sk[k] = copy.copy(v)
+            if v is not None and v != "None":
+                if k != 'color':
+                    sk[k] = copy.copy(v)
+                elif str(v) != "-1":
+                    # Ignore the default color.
+                    sk[k] = copy.copy(v)
         for k, v in pd.items():
             if k != "data":
-                if v is not None or v != "None":
-                    if k == 'color' and str(v) == "-1":
-                        fk[k] = copy.copy(v)
-                else:
+                if v is not None and v != "None" and v != '':
                     fk[k] = copy.copy(v)
+                #else:
+                #    fk[k] = copy.copy(v)
         if fk['ylabel'] is not None:
             ax.set_ylabel(fk['ylabel'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
         if fk['xlabel'] is not None:
             ax.set_xlabel(fk['xlabel'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
-        if fk['title'] is not None:
-            ax.set_title(fk['title'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
+        #if fk['title'] != '':
+        ax.set_title(fk['title'], fontsize=float(self.parent.mpl_dict['fontsize']['titlesize']), fontweight='bold')
         if sk['loc'] != 'None':
             loc = copy.deepcopy(sk['loc'])
             irange = copy.deepcopy(sk['range'])
@@ -196,7 +195,7 @@ class mplCanvas(FigureCanvas):
         # This should just occur on a rebuild, so if we haven't added anything, don't worry about it.
         active = False
         plotted = False
-        self.fig.suptitle(self.parent.mpl_dict['Title'] if self.parent.mpl_dict is not None else '')
+        self.fig.suptitle(self.parent.mpl_dict['Title'] if self.parent.mpl_dict is not None else '', fontname='Hack')
         self.handles = []
         self.labels = []
         for rows in range(0, int(self.parent.mpl_dict['Rows'])):
