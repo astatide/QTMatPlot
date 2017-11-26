@@ -212,6 +212,7 @@ class mplCanvas(FigureCanvas):
         for rows in range(0, int(self.parent.mpl_dict['Rows'])):
             for cols in range(0, int(self.parent.mpl_dict['Columns'])):
                 # Throw in the axes object.
+                print("DATASETS: {}".format(self.parent.mpl_dict['Datasets']))
                 for dset in range(0, int(self.parent.mpl_dict['Datasets'])):
                     if self.parent.mpl_dict['Active'] == str((rows,cols)):
                         self.axes[rows,cols].spines['bottom'].set_color("r")
@@ -222,10 +223,13 @@ class mplCanvas(FigureCanvas):
                     if 'Update' not in self.parent.mpl_dict['Figures'][str((rows,cols))]:
                         self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = True
                     if self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] == True:
-                        self.axes[rows,cols].clear()
+                        print("HOW MANY DSETS: {}".format(dset))
+                        if dset == 0:
+                            # Only clear this during the first new drawing pass
+                            self.axes[rows,cols].clear()
                         self.plot(self.parent.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols])
-                        self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = False
                         plotted = True
+                self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = False
             #if plotted:
             #    self.fig.tight_layout()
 

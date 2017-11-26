@@ -244,7 +244,7 @@ class App(QMainWindow):
         self.dc.update_figure()
         #pass
 
-    def updateFromDict(self, defaults=True, firstrun=False, updatedKeys=None):
+    def updateFromDict(self, defaults=False, firstrun=False, updatedKeys=None):
         d = self.mpl_dict
         for rows in range(0, int(self.mpl_dict['Rows'])):
             for cols in range(0, int(self.mpl_dict['Columns'])):

@@ -146,21 +146,23 @@ class newTree():
             pass
         if type(self.data) == dict:
             if new:
+                # Blow the tree away.
                 self.tree.clear()
+                # Also, delete the keys in the tree.
+                #self.parent.mpl_dict['keyTree'] = {}
             self.handleDict(self.data, self.tree, tree_dict=self.data['keyTree'], new=new)
         self.tree.itemChanged.connect(self.onItemChanged)
 
     def getFigures(self):
         return self.figures
 
-    def handleDict(self, dict_data, tree, tree_dict={},new=False, i=0):
+    def handleDict(self, dict_data, tree, tree_dict={},new=False):
         # We can actually have numerous structures, here.
         # Why not keep track of it, for now?
         # We want to do a reverse lookup
         ddc = copy.copy(dict_data)
         con = False
         for key, val in sorted(ddc.items(), key= lambda x: str(x)):
-            i += 1
             if type(key) == str and len(key) >= 6:
                 if key[0:7] != 'keyTree' and key[0:7] != 'valTree':
                     con = True
@@ -169,18 +171,13 @@ class newTree():
             else:
                 con = True
             if con:
-                if new:
+                try:
+                    keyTree = tree_dict['keyTree.{}'.format(key)]
+                    keyTree.setText(0, str(key))
+                except Exception:
                     keyTree = QTreeWidgetItem(tree, [str(key)])
                     keyTree.oldValue = [str(key)]
                     tree_dict['keyTree.{}'.format(key)] = keyTree
-                else:
-                    try:
-                        keyTree = tree_dict['keyTree.{}'.format(key)]
-                        keyTree.setText(0, str(key))
-                    except KeyError:
-                        keyTree = QTreeWidgetItem(tree, [str(key)])
-                        keyTree.oldValue = [str(key)]
-                        tree_dict['keyTree.{}'.format(key)] = keyTree
                 '''if 'keyTree.{}'.format(key) not in tree_dict or new:
                     keyTree = QTreeWidgetItem(tree, [str(key)])
                     keyTree.oldValue = [str(key)]
@@ -195,11 +192,11 @@ class newTree():
                         # This is a normal HDF5 group.  Treat it appropriately.
                     if key not in tree_dict:
                         tree_dict[key] = {}
-                    self.handleDict(val, keyTree, new=new, tree_dict=tree_dict[key], i=i)
+                    self.handleDict(val, keyTree, new=new, tree_dict=tree_dict[key])
                 if type(val) == dict:
                     if key not in tree_dict:
                         tree_dict[key] = {}
-                    self.handleDict(val, keyTree, new=new, tree_dict=tree_dict[key], i=i)
+                    self.handleDict(val, keyTree, new=new, tree_dict=tree_dict[key])
                 elif type(val) == h5py._hl.dataset.Dataset:
                     # Let's handle 2 and 3 dimensional data for now.  Anything more than that and it just... well, it won't plot anyway.
                     # I know this shouldn't go into the handlDict function, but hey.  At least rename it.
@@ -227,7 +224,7 @@ class newTree():
                                     sdict[(i,j)] = str(val.shape)
                     if key not in tree_dict:
                         tree_dict[key] = {}
-                    self.handleDict(sdict, keyTree, new=new, tree_dict=tree_dict[key], i=i)
+                    self.handleDict(sdict, keyTree, new=new, tree_dict=tree_dict[key])
                 else:
                     # We want this to be like rows, not columns
                     if self.rows:
@@ -301,7 +298,11 @@ class newTree():
             pass
         # Now, we add the new key: pair value into the original dictionary.
         # Once we call the update function, it'll regenerate the QTreeWidgetItem
+        # This doesn't seem to work for things in the top level?
+        #if len(keys) > 1:
         dictItem[item.data(0,0)] = item.data(1,0)
+        #else:
+        #    self.parent.mpl_dict[item.data(0,0)] = item.data(1,0)
         print(item.data(0,0), item.data(1,0), dictItem[item.data(0,0)])
         item.oldValue = [item.data(0,0), item.data(1,0)]
         #self.removeItem(item)
@@ -351,12 +352,14 @@ class newTree():
         # This works.
         keys = self.getParentItems(test)
         self.changeItem(test)
-        defaults = False
+        new = False
+        redraw = False
         updatedKeys = None
         # TEST code
         # These are a bunch of checks to see if we need to update the subplots or the figure.
-        if  keys[-1] == 'Rows' or keys[-1] == 'Columns' or keys[-1] == 'Datasets' or keys[-1] == 'FilesToLoad':
-            #defaults = True
+        '''if  keys[-1] == 'Rows' or keys[-1] == 'Columns' or keys[-1] == 'Datasets' or keys[-1] == 'FilesToLoad':
+            # trigger a redraw of everything, including the widget.
+            new = True
             self.parent.mpl_dict['Update'] = True
         # We need to check if our inner key is one of the fig or deset defaults.
         # This fails if our list isn't that large, though.
@@ -364,21 +367,36 @@ class newTree():
             key = keys[-2]
         else:
             key = keys[-1]
+        # We'll just trigger a redraw for these.
         if  key == 'DSetDefaults' or key == 'FigDefaults':
-            defaults = True
-            self.parent.mpl_dict['Update'] = True
-            updatedKeys = [key]
+            #defaults = True
+            redraw = True
+            #self.parent.mpl_dict['Update'] = True
+            #updatedKeys = [key]
         if key == 'figsize' or key == 'fontsize' or key == 'gridspec_kw' or key == 'subplot_kw' or 'GridRatio':
+            # Trigger a redraw and a full figure update.
             self.parent.mpl_dict['Update'] = True
+            new = True
         if keys[-1] == 'width' or keys[-1] == 'height' or keys[-1] == 'dpi':
+            # Just triggering a resize.
             self.parent.mpl_dict['Resize'] = True
         if keys[0] == 'Figures':
             # We do need to trigger a total redraw.
             self.parent.mpl_dict['Update'] = True
+            self.parent.mpl_dict['Figures'][str(keys[1])]['Update'] = True'''
+        new = True
+        self.parent.mpl_dict['Update'] = True
+        if keys[0] == 'Datasets':
+            print(self.parent.mpl_dict)
+        if keys[0] == 'Figures':
+            # We do need to trigger a total redraw.
+            print("YES!")
+            print(str(keys[1]))
             self.parent.mpl_dict['Figures'][str(keys[1])]['Update'] = True
+        #self.updateTree()
+        # This function definitly needs updating.
         if self.function:
-            self.function(defaults=defaults, updatedKeys=updatedKeys)
-        self.updateTree(defaults)
+            self.function()
 
     def onClicked(self, test):
         # This is the thing which will actually return our dataset.
