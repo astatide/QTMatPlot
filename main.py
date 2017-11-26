@@ -81,7 +81,7 @@ class App(QMainWindow):
         self.dataLoader = dataLoader(self, ['direct.h5'])
         self.dc = mplCanvas(self.main_widget, data_parent=self, width=10, height=8, dpi=100, data=self.dataLoader.dataStructure, notify_func=self.notify)
         self.save_button = newButton(self, "Save", "Saves the Figure", (250,self.height-30), self.save_figure, click_args=None)
-        self.load_button = newButton(self, "Load Yaml", "Loads the Config", (250,self.height-30), self.load_yaml, click_args=None)
+        self.load_button = newButton(self, "Load Yaml", "Loads the Config", (250,self.height-30), self.dataLoader.loadNewYaml, click_args=None)
         self.text = newTextBox(self, size=(0,0), pos=(self.save_button.button.width()+250, self.height-30), init_text="{}".format(kinetics))
         #self.text.textBox.setGeometry(self.save_button.button.width()+self.load_button.button.width(), self.height-30, self.width-self.save_button.button.width(), 15)
         self.text.textBox.resize(self.width-self.save_button.button.width(), 15)
@@ -213,11 +213,10 @@ class App(QMainWindow):
 
 
     def save_figure(self):
-        self.fig.savefig("test.pdf")
+        self.dc.fig.savefig("test.pdf")
         save_dict = remove_trees(self.mpl_dict)
         with open('test.yml', 'w') as outfile:
             yaml.dump(save_dict, outfile, default_flow_style=False)
-
 
     def load_yaml(self, default='src/default.yaml'):
         test = yaml.load(open(default, 'r'))

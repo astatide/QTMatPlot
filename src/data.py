@@ -69,6 +69,11 @@ class dataLoader():
         else:
             pass
 
+    def loadNewYaml(self):
+        filename, _ = QFileDialog.getOpenFileName(self.parent, 'Open Yaml File', os.getcwd())
+        print(filename)
+        self.parent.load_yaml(filename) 
+
     def loadHDF5(self, filename):
         try:
             # Pandas dataframe
