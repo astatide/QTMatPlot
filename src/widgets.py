@@ -151,7 +151,9 @@ class newTree():
                 self.tree.clear()
                 # Also, delete the keys in the tree.
                 #self.parent.mpl_dict['keyTree'] = {}
+            print("UPDATIG THR")
             self.handleDict(self.data, self.tree, tree_dict=self.data['keyTree'], new=new)
+            print(self.data['keyTree'])
         self.tree.itemChanged.connect(self.onItemChanged)
 
     def getFigures(self):

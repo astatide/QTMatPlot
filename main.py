@@ -218,6 +218,7 @@ class App(QMainWindow):
         with open('test.yml', 'w') as outfile:
             yaml.dump(save_dict, outfile, default_flow_style=False)
 
+
     def load_yaml(self, default='src/default.yaml'):
         test = yaml.load(open(default, 'r'))
         print(test)
@@ -254,6 +255,7 @@ class App(QMainWindow):
             self.mplTree.tree.clear()
             self.dataTree.tree.clear()'''
         self.mplTree.updateTree(new)
+        self.dataTree.updateTree(new)
         # Well, it no longer seems to die, but.
         # If we want to update this, we're going to have to call a clear function.
         #self.dataTree.updateTree(new)

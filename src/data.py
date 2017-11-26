@@ -72,7 +72,18 @@ class dataLoader():
     def loadNewYaml(self):
         filename, _ = QFileDialog.getOpenFileName(self.parent, 'Open Yaml File', os.getcwd())
         print(filename)
-        self.parent.load_yaml(filename) 
+        self.parent.load_yaml(filename)
+        self.parent.mpl_dict['keyTree'] = {}
+        self.parent.mplTree.data = self.parent.mpl_dict
+        self.parent.dataTree.parent.mpl_dict = self.parent.mpl_dict
+        #self.parent.mpl_dict['FigDefaults']['data'] = {}
+        #self.parent.updateFromDict(defaults=False, firstrun=False)
+        self.parent.refreshWidgets(new=True)
+        #self.parent.mpl_dict = self.parent.dataTree.data
+        #self.parent.mplTree.updateTree(True)
+        #self.parent.dataTree.updateTree()
+        print(self.parent.mpl_dict)
+        #self.parent.refreshWidgets(new=True)
 
     def loadHDF5(self, filename):
         try:

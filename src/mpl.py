@@ -241,7 +241,8 @@ class mplCanvas(FigureCanvas):
         try:
             #handles, legends = self.fig.get_legend_handles_labels
             print(new_handles, self.labels)
-            self.fig.legend(new_handles, self.labels, loc="lower center")
+            # Because I like it.
+            self.fig.legend(new_handles, self.labels, loc="lower center", ncol=len(self.labels))
             #self.fig.legend()
         except Exception as e:
             print(e)
