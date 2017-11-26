@@ -61,8 +61,8 @@ class newTree():
     def __init__(self, parent, data, pos, col=1, rows=True, size=None, editable=True, clickable=False, function=None, get_figures=None, mpl=None, function2=None):
         self.tree = QTreeWidget(parent)
         self.tree.setColumnCount(col+1)
-        self.tree.setSortingEnabled(True)
-        self.tree.sortByColumn(0, 0)
+        #self.tree.setSortingEnabled(True)
+        #self.tree.sortByColumn(1, 0)
         self.parent = parent
         self.get_figures = get_figures
         self.col = col+1
@@ -165,9 +165,18 @@ class newTree():
         # We want to do a reverse lookup
         ddc = copy.copy(dict_data)
         con = False
-        for key, val in sorted(ddc.items(), key= lambda x: str(x)):
+        oldKeyTree = None
+        from collections import OrderedDict
+        #for key, val in sorted(ddc.items(), key= lambda x: str(x)):
+        od = {}
+        try:
+            od = OrderedDict(sorted(ddc.items(), key= lambda i: self.parent.mpl_dict['keyOrder'].index(i[0])))
+        except:
+            od = ddc
+        for key, val in od.items():
             if type(key) == str and len(key) >= 6:
-                if key[0:7] != 'keyTree' and key[0:7] != 'valTree':
+                #if key[0:7] != 'keyTree' and key[0:7] != 'valTree':
+                if key not in self.parent.mpl_dict['hidden_keys']:
                     con = True
                 else:
                     con = False
@@ -178,7 +187,13 @@ class newTree():
                     keyTree = tree_dict['keyTree.{}'.format(key)]
                     keyTree.setText(0, str(key))
                 except Exception:
-                    keyTree = QTreeWidgetItem(tree, [str(key)])
+                    # This behavior ensures that we insert the new tree item at
+                    # the location specified in the abov dictionary.  Seems to work.
+                    if oldKeyTree is not None:
+                        keyTree = QTreeWidgetItem(tree, oldKeyTree)
+                        keyTree.setText(0, str(key))
+                    else:
+                        keyTree = QTreeWidgetItem(tree, [str(key)])
                     keyTree.oldValue = [str(key)]
                     tree_dict['keyTree.{}'.format(key)] = keyTree
                 '''if 'keyTree.{}'.format(key) not in tree_dict or new:
@@ -188,6 +203,7 @@ class newTree():
                 else:
                     keyTree = tree_dict['keyTree.{}'.format(key)]
                     keyTree.setText(0, str(key))'''
+                oldKeyTree = keyTree
                 if key == 'Figures':
                     self.figures = keyTree
                 if type(val) == h5py._hl.group.Group:

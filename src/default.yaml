@@ -52,3 +52,5 @@ keyTree: {}
 subplot_kw:
   sharex: true
   sharey: true
+hidden_keys: ['keyTree', 'Active', 'ActiveDSet', 'Update', 'keyOrder', 'Resize', 'hidden_keys']
+keyOrder: ['FilesToLoad', 'Colors', 'Columns', 'Rows', 'Datasets', 'figsize', 'dpi', 'gridspec_kw', 'GridRatio', 'fontsize', 'Title', 'TitleHeight', 'subplot_kw', 'FigDefaults', 'DSetDefaults', 'Figures', 'keyTree', 'Active', 'ActiveDSet', 'Update', 'keyOrder', 'Resize', 'hidden_keys']

@@ -65,6 +65,7 @@ class App(QMainWindow):
         self.top = 10
         self.width = 1280
         self.height = 800
+        self.mpl_dict = {}
         self.load_yaml()
         print(self.mpl_dict)
         self.mpl_dict['FigDefaults']['data'] = {}
@@ -224,7 +225,7 @@ class App(QMainWindow):
         print(test)
         #if test != None:
         # We want to push a lot of this to later.
-        self.mpl_dict = copy.deepcopy(test)
+        self.mpl_dict.update(copy.deepcopy(test))
         self.mpl_dict['Update'] = True
         #self.mplTree.tree.clear()
         #self.dataTree.tree.clear()
