@@ -134,11 +134,13 @@ class mplCanvas(FigureCanvas):
             del sk['range']
             try:
                 handle = plotfunc(ax, self.translate_location(loc), irange, orange, sk)
+                return handle
             except Exception as e:
                 if self.notify_func is not None:
                     self.notify_func(e)
+                    return None
                 else:
-                    pass
+                    return None
 
     def updateFromDict(self):
         d = self.parent.mpl_dict
@@ -195,6 +197,8 @@ class mplCanvas(FigureCanvas):
         active = False
         plotted = False
         self.fig.suptitle(self.parent.mpl_dict['Title'] if self.parent.mpl_dict is not None else '')
+        self.handles = []
+        self.labels = []
         for rows in range(0, int(self.parent.mpl_dict['Rows'])):
             for cols in range(0, int(self.parent.mpl_dict['Columns'])):
                 # Throw in the axes object.
@@ -213,15 +217,34 @@ class mplCanvas(FigureCanvas):
                         if dset == 0:
                             # Only clear this during the first new drawing pass
                             self.axes[rows,cols].clear()
-                        self.plot(self.parent.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols])
+                        self.handles.append(self.plot(self.parent.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols]))
+                        #handle, label = self.axes[rows,cols].get_legend_handles_labels()
+                        #self.handles.append(handle)
+                        if self.parent.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)]['label'] != "None":
+                            self.labels.append(self.parent.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)]['label'])
+                        #self.labels.append(self.parent.mpl_dict['Figures'][str((rows,cols))]['Label'])
                         plotted = True
                 self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = False
         # Update which dset is active.
         if self.parent.mpl_dict['Active'] is not None:
             self.setOpenDSet(self.parent.mpl_dict['Active'])
+        self.plotLegend()
             #if plotted:
             #    self.fig.tight_layout()
 
+    def plotLegend(self):
+        print(self.handles)
+        new_handles = []
+        for handle in self.handles:
+            if handle is not None:
+                new_handles.append(handle)
+        try:
+            #handles, legends = self.fig.get_legend_handles_labels
+            print(new_handles, self.labels)
+            self.fig.legend(new_handles, self.labels, loc="lower center")
+            #self.fig.legend()
+        except Exception as e:
+            print(e)
 
     def mouseMoveEvent(self, event):
         # translate into MPL coordinates

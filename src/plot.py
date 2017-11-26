@@ -35,7 +35,7 @@ from matplotlib.backend_bases import key_press_handler
 
 #handle = plotfunc(ax, self.translate_location(loc), irange, orange, **sk)
 def shade(ax, data, irange, index, sk):
-    ax.plot(data['expected'][:], **sk)
+    handle, = ax.plot(data['expected'][:], **sk)
     sk['alpha'] = .3
-    handle = ax.fill_between(range(0, data['expected'].shape[0]), data['ci_ubound'][:], data['ci_lbound'][:], **sk)
+    ax.fill_between(range(0, data['expected'].shape[0]), data['ci_ubound'][:], data['ci_lbound'][:], **sk)
     return handle

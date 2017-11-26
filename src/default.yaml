@@ -15,6 +15,7 @@ DSetDefaults:
   color: -1
   loc: None
   range: None
+  label: None
 Datasets: 1
 FigDefaults:
   Update: true
