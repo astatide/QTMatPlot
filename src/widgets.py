@@ -2,7 +2,7 @@
 
 # Stuff to get the window open.
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit, QMenu, QAction, QDockWidget, QMainWindow, QHBoxLayout, QTextEdit, QComboBox
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit, QMenu, QAction, QDockWidget, QMainWindow, QHBoxLayout, QTextEdit, QComboBox, QPlainTextEdit
 from PyQt5.QtGui import QIcon, QCursor
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot
@@ -26,6 +26,7 @@ sns.set(font='sans-serif', style='ticks')
 sns.set_palette('deep')
 
 import yaml
+import traceback
 
 # and here http://www.boxcontrol.net/embedding-matplotlib-plot-on-pyqt5-gui.html
 
@@ -57,12 +58,13 @@ def remove_trees(idict, odict=None):
 
 # For displaying data in a tree.
 class newTree():
-    def __init__(self, parent, data, pos, col=1, rows=True, size=None, editable=True, clickable=False, function=None, get_figures=None, mpl=None, function2=None):
+    def __init__(self, parent, data, pos, col=1, rows=True, size=None, editable=True, clickable=False, function=None, get_figures=None, mpl=None, function2=None, notify_func=None):
         self.tree = QTreeWidget(parent)
         self.tree.setColumnCount(col+1)
         #self.tree.setSortingEnabled(True)
         #self.tree.sortByColumn(1, 0)
         self.parent = parent
+        self.notify_func = notify_func
         self.get_figures = get_figures
         self.col = col+1
         self.pos = pos
@@ -121,8 +123,14 @@ class newTree():
 
     def reassignMplFromHighlightedData(self):
         #print(self.tree.selectedItems())
-        location = self.getParentItems(self.tree.selectedItems()[0])
-        self.reassignMpl(location)
+        try:
+            location = self.getParentItems(self.tree.selectedItems()[0])
+            self.reassignMpl(location)
+        except Exception as e:
+            tb = traceback.format_exc()
+            if self.notify_func is not None:
+                self.notify_func(tb)
+
 
     def reassignMpl(self, location):
         # This function reassigns a plot to be the dataset in location.
@@ -428,14 +436,17 @@ class newTree():
 
 class newTextBox():
     def __init__(self, parent, size, pos, init_text=""):
-        self.textBox = QLineEdit(parent)
-        #self.textBox = QTextEdit(parent)
-        self.textBox.setText(init_text)
+        #self.textBox = QLineEdit(parent)
+        self.textBox = QPlainTextEdit(parent)
+        self.textBox.appendPlainText(init_text)
+        self.textBox.setReadOnly(True)
         if size and pos:
             self.textBox.setGeometry(pos[0], pos[1], size[0], size[1])
+            #self.textBox.resize(size[0], size[1])
+            #self.textBox.setMaximumHeight(size[1])
 
     def showText(self, text):
-        self.textBox.setText(text)
+        self.textBox.appendPlainText(text)
 
 class newButton():
     def __init__(self, parent, label, tooltip, pos, function, click_args=None):

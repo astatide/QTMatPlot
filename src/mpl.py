@@ -20,6 +20,7 @@ from matplotlib import rcParams
 #sns.set_style('ticks')
 #sns.set_context('paper')
 sns.set_palette('deep')
+import traceback
 
 import yaml
 
@@ -135,8 +136,9 @@ class mplCanvas(FigureCanvas):
                 handle = plotfunc(ax, self.translate_location(loc), irange, orange, sk)
                 return handle
             except Exception as e:
+                tb = traceback.format_exc()
                 if self.notify_func is not None:
-                    self.notify_func(e)
+                    self.notify_func(tb)
                     return None
                 else:
                     return None

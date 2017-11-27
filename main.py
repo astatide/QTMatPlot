@@ -84,13 +84,13 @@ class App(QMainWindow):
         self.dc = mplCanvas(self.main_widget, data_parent=self, width=10, height=8, dpi=100, data=self.dataLoader.dataStructure, notify_func=self.notify)
         self.save_button = newButton(self, "Save", "Saves the Figure", (250,self.height-30), self.save_figure, click_args=None)
         self.load_button = newButton(self, "Load Yaml", "Loads the Config", (250,self.height-30), self.dataLoader.loadNewYaml, click_args=None)
-        self.text = newTextBox(self, size=(0,0), pos=(self.save_button.button.width()+250, self.height-30), init_text="Welcome!")
-        #self.text.textBox.setGeometry(self.save_button.button.width()+self.load_button.button.width(), self.height-30, self.width-self.save_button.button.width(), 15)
-        self.text.textBox.resize(self.width-self.save_button.button.width(), 15)
-        self.mplTree = newTree(self, self.mpl_dict, pos=(self.width-250,0), size=(250,self.height-30-100), col=1, function=self.updateFromDict, rows=True)
+        self.text = newTextBox(self, size=(0,30), pos=(self.save_button.button.width()+250, self.height-30), init_text="Welcome!")
+        self.text.textBox.setGeometry(self.save_button.button.width()+self.load_button.button.width(), self.height-30, self.width-self.save_button.button.width(), 15)
+        self.mplTree = newTree(self, self.mpl_dict, pos=(self.width-250,0), size=(250,self.height-30-100), col=1, function=self.updateFromDict, rows=True, notify_func=self.notify)
         self.dsetTree = newTree(self, self.mpl_dict['Figures'].get(str(self.dc.activeAxes)), pos=(self.width-250,0), size=(250,50), col=1, function=self.updateFromDict, rows=True)
-        self.dataTree = newTree(self, self.dataLoader.dataStructure, pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText, function2=self.updateFromDict, get_figures=self.mplTree.getFigures, mpl=self.mpl_dict)
+        self.dataTree = newTree(self, self.dataLoader.dataStructure, pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText, function2=self.updateFromDict, get_figures=self.mplTree.getFigures, mpl=self.mpl_dict, notify_func=self.notify)
         self.dataTree.tree.setDragEnabled(True)
+        self.dataTree.tree.expandToDepth(0)
         self.mplTree.tree.header().resizeSection(0, 175)
         self.dataTree.tree.header().resizeSection(0, 200)
         # Do up some docks for everything!
@@ -158,7 +158,8 @@ class App(QMainWindow):
         #self.blayout.addWidget(self.toolbar)
         #self.bwidget.setMinimumHeight((self.width-self.save_button.button.width(), 30))
         #self.text.textBox.setMinimumHeight((10))
-        #self.text.textBox.setMaximumHeight((10))
+        self.text.textBox.setMaximumHeight((100))
+        self.bwidget.resize(400, 30)
         self.bwidget.setLayout(self.blayout)
         # Remove title bar.
         self.textdock.setTitleBarWidget(QWidget())
@@ -215,9 +216,7 @@ class App(QMainWindow):
         self.mplTree.updateTree()
 
     def delFromDict(self):
-
         self.mplTree.removeItem(self.mplTree.tree.selectedItems()[0])
-
 
     def save_figure(self):
         self.dc.fig.savefig("test.pdf")
@@ -248,12 +247,6 @@ class App(QMainWindow):
         #self.dc.parent.mpl_dict = self.mpl_dict
         #self.refreshWidgets(new=True)
 
-    def on_key_press(self, event):
-        print('you pressed', event.key)
-        # implement the default mpl key press events described at
-        # http://matplotlib.org/users/navigation_toolbar.html#navigation-keyboard-shortcuts
-        key_press_handler(event, self.dc, self.toolbar)
-
     def notify(self, text):
         self.text.showText(str(text))
 
@@ -261,26 +254,22 @@ class App(QMainWindow):
         self.mplTree.parent.mpl_dict = self.mpl_dict
         self.dataTree.parent.mpl_dict = self.mpl_dict
         self.dc.parent.mpl_dict = self.mpl_dict
-        if 'keyTree' not in self.mpl_dict['Figures'][str(self.mpl_dict['Active'])]:
-            self.mpl_dict['Figures'][str(self.mpl_dict['Active'])]['keyTree'] = {}
+        self.dsetTree.tree.clear()
+        #if 'keyTree' not in self.mpl_dict['Figures'][str(self.mpl_dict['Active'])]:
+        # Actually, we basically always need to blow this away.
+        self.mpl_dict['Figures'][str(self.mpl_dict['Active'])]['keyTree'] = {}
         self.dsetTree.data = self.mpl_dict['Figures'].get(str(self.mpl_dict['Active']))
         self.dsetBox.reInit(range(0, int(self.mpl_dict['Datasets'])))
         if self.mpl_dict['Active'] is not None:
             self.dc.setOpenDSet(self.mpl_dict['Active'])
         self.dsetBox.comboBox.setCurrentIndex(self.dsetBox.comboBox.findText(str(self.mpl_dict['ActiveDSet'])))
-        # Danger; recursion.
-        '''if new:
-            self.mplTree.tree.clear()
-            self.dataTree.tree.clear()'''
         self.mplTree.updateTree(new)
         self.dataTree.updateTree(new)
         # It does need to be cleared, but we should try and open the parent item.
-        self.dsetTree.tree.clear()
         self.dsetTree.updateTree(new)
         # Neat bit of kit that expands stuff out to the first level.
         # Useful for this tree.
         self.dsetTree.tree.expandToDepth(0)
-        self.dataTree.tree.expandToDepth(0)
         # Well, it no longer seems to die, but.
         # If we want to update this, we're going to have to call a clear function.
         #self.dataTree.updateTree(new)
@@ -308,7 +297,7 @@ class App(QMainWindow):
                             self.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)] = copy.deepcopy(new_dict)
                 # Here, we're updating the defaults.
                 else:
-                    # Here, we're updating from the defaults.
+                    # Here, we're updating from the defaults.  Necessary for the first time.
                     new_dict = {}
                     for key, val in self.mpl_dict['FigDefaults'].items():
                         if updatedKeys == None:
@@ -341,32 +330,11 @@ class App(QMainWindow):
         if not firstrun:
             self.refreshWidgets(new=defaults)
 
-    '''def resizeEvent(self, event):
-        # size().height/width should do it.
-        self.resizeAll(event.size().height, event.size().width)
-        pass'''
-
-    def resizeAll(self, height, width):
-        #self.dataTree.tree.resize(self.dataTree.tree.width(), height()-30)
-        #self.mplTree.tree.setGeometry(width()-250, 0, 250, height()-30)
-        #self.main_widget.setGeometry(250, 0, width()-500, (height()-25))
-        self.main_widget.setGeometry(0, 0, width(), (height()-25))
-        self.save_button.button.move(0,height()-30)
-        self.load_button.button.move(self.save_button.button.width(),height()-30)
-        self.text.textBox.setGeometry(self.save_button.button.width()+self.load_button.button.width(), height()-30, width()-self.save_button.button.width(), 30)
-
     def keyPressEvent(self, e):
         # This is our key press handler.  It's mostly just a stub right now.
         if e.key() == QtCore.Qt.Key_Escape:
             self.close()
 
-    def wheelEvent(self, e):
-        # This is what happens when we scroll.
-        pass
-
-    # Data loading; for now, just do hdf5
-
-    # For displaying data in a tree.
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = App()
