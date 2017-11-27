@@ -26,7 +26,6 @@ sns.set(font='sans-serif', style='ticks')
 sns.set_palette('deep')
 
 import yaml
-import numba as nb
 
 # and here http://www.boxcontrol.net/embedding-matplotlib-plot-on-pyqt5-gui.html
 
