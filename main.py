@@ -234,6 +234,7 @@ class App(QMainWindow):
         self.mpl_dict['Update'] = True
         for f in list(self.mpl_dict['FilesToLoad']):
             try:
+                # Does seem to work.
                 self.loadNewFile(f)
                 # Remove the item, as it automatically loads it right now.
                 self.mpl_dict['FilesToLoad'] = self.mpl_dict['FilesToLoad'][:-1]
