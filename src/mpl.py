@@ -68,7 +68,7 @@ class mplCanvas(FigureCanvas):
         self.setAcceptDrops(True)
         # Can't remembr what this is for; qt, most likely.
         self.hoverAxes = None
-        self.activeAxes = None
+        self.activeAxes = (0,0)
         self.setParent(parent)
 
         # Set the size policy such that we can't be squished, but will
@@ -270,6 +270,8 @@ class mplCanvas(FigureCanvas):
         if self.hoverAxes is not None:
             self.parent.mpl_dict['Active'] = self.hoverAxes
             self.setOpenDSet(self.parent.mpl_dict['Active'])
+            # We want to change the active dset, too.
+            #self.parent.dsetTree.data = self.parent.mpl_dict['Figures'].get(str(self.hoverAxes))
             #if self.parent.mpl_dict['ActiveDSet'] == None:
             # For some reason, doing this screws everything up.  Have to look into that.
             #self.parent.mpl_dict['keyTree.Active'].setText(1, str(self.hoverAxes))
@@ -277,6 +279,7 @@ class mplCanvas(FigureCanvas):
             #FigureCanvas.mousePressEvent(self, event)
             print("YAY")
             print(self.parent.mpl_dict['ActiveDSet'], self.parent.mpl_dict['Active'])
+            self.parent.refreshWidgets()
             self.update_figure()
 
     def dragEnterEvent(self, event):
