@@ -94,7 +94,7 @@ class dataLoader():
             raise Exception
         except:
             # NOT a Pandas Dataframe
-            f = h5py.File(filename, 'r')
+            f = h5py.File(filename, 'r', driver='core')
             return dict(f)
 
     def loadPickle(self, filename):

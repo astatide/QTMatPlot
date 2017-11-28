@@ -101,96 +101,36 @@ class mplCanvas(FigureCanvas):
     def plot(self, pd, index, ax):
         # pd is the plot dictionary
         #ax.ticklabel_format(style='sci',scilimits=(0,0), axis='both')
-        for i in ['x', 'y']:
-            for m in ['minor', 'major']:
-                tp = copy.deepcopy(self.parent.mpl_dict['FigDefaults']['{}_{}_tick_params'.format(i,m)])
-                for k,v in pd['{}_{}_tick_params'.format(i,m)].items():
-                    if v != '':
-                        tp[k] = copy.copy(v)
-                        prop = copy.deepcopy(self.parent.mpl_dict['Fonts']['Default'])
-                        for k,v in self.parent.mpl_dict['Fonts']['Ticks'].items():
-                            if v != '':
-                                prop[k] = copy.copy(v)
-                            else:
-                                del prop[k]
-                            if 'size' in prop:
-                                tp['labelsize'] = prop['size']
-                    elif tp[k] == '':
-                        del tp[k]
-                del tp['axis']
-                if 'length' in tp:
-                    tp['length'] = int(tp['length'])
-                if i == 'x':
-                    ax.xaxis.set_tick_params(**tp)
-                elif i == 'y':
-                    ax.yaxis.set_tick_params(**tp)
-        #import matplotlib
-        #prop = matplotlib.font_manager.FontProperties(prop)
-        #for label in ax.get_xticklabels():
-    #        label.set_fontproperties(prop)
-        #for label in ax.get_yticklabels():
-        #    label.set_fontproperties(prop)
-        # Need to see if I can't fix this.
-        #ax.set_fontproperties(prop)
-        # Here's where we're going to handle dictionary inheritance.
         sk = dict(self.parent.mpl_dict['DSetDefaults'])
+        print(sk['loc'])
+        if sk['loc'] == '' or sk['loc'] == None or sk['loc'] == 'None':
+            sk['loc'] = copy.copy(pd['data'][str(index)]['loc'])
+        print(sk['loc'])
         fk = dict(self.parent.mpl_dict['FigDefaults'])
-        for k, v in pd['data'][str(index)].items():
-            if v is not None and v != "None":
-                if k != 'color':
-                    sk[k] = copy.copy(v)
-                elif str(v) != "-1":
-                    # Ignore the default color.
-                    sk[k] = copy.copy(v)
-        for k, v in pd.items():
-            if k != "data":
-                if v is not None and v != "None" and v != '':
-                    fk[k] = copy.copy(v)
-                #else:
-                #    fk[k] = copy.copy(v)
-        if fk['ylabel'] is not None:
-            prop = copy.deepcopy(self.parent.mpl_dict['Fonts']['Default'])
-            for k,v in self.parent.mpl_dict['Fonts']['Labels'].items():
-                if v != '':
-                    prop[k] = copy.copy(v)
-            ax.set_ylabel(fk['ylabel'], fontdict=prop)
-        if fk['xlabel'] is not None:
-            prop = copy.deepcopy(self.parent.mpl_dict['Fonts']['Default'])
-            for k,v in self.parent.mpl_dict['Fonts']['Labels'].items():
-                if v != '':
-                    prop[k] = copy.copy(v)
-            ax.set_xlabel(fk['xlabel'], fontdict=prop)
-        prop = copy.deepcopy(self.parent.mpl_dict['Fonts']['Default'])
-        for k,v in self.parent.mpl_dict['Fonts']['Title'].items():
-            if v != '':
-                prop[k] = copy.copy(v)
-        #print(prop)
-        #import matplotlib
-        #prop = matplotlib.font_manager.FontProperties(prop)
-        ax.set_title(fk['title'], fontdict=prop)
-        if fk['yscale'] != '':
-            ax.set_yscale(fk['yscale'])
-        if fk['xscale'] != '':
-            ax.set_yscale(fk['xscale'])
-        if fk['ylim'] != '':
-            ylim = ast.literal_eval(fk['ylim'])
-            ax.set_ylim(ylim)
-        if fk['xlim'] != '':
-            xlim = ast.literal_eval(fk['xlim'])
-            ax.set_xlim(xlim)
         if sk['loc'] != 'None':
-            loc = copy.deepcopy(sk['loc'])
-            irange = copy.deepcopy(sk['range'])
-            orange = None
-            plotfuncstr = fk['type'].split('.')
-            module = __import__(plotfuncstr[0])
-            plotfunc = getattr(module, plotfuncstr[1])
+            for k, v in pd['data'][str(index)].items():
+                if v is not None and v != "None":
+                    if k != 'color':
+                        sk[k] = copy.copy(v)
+                    elif str(v) != "-1":
+                        # Ignore the default color.
+                        sk[k] = copy.copy(v)
+            for k, v in pd.items():
+                if v is not None and v != "None":
+                    if k != 'data':
+                        fk[k] = copy.copy(v)
             if sk['color'] == -1:
                 sk['color'] = str(self.parent.mpl_dict['Colors'][index])
             elif str(sk['color'])[0] == "#":
                 pass
             else:
                 sk['color'] = str(self.parent.mpl_dict['Colors'][int(sk['color'])])
+            loc = copy.deepcopy(sk['loc'])
+            irange = copy.deepcopy(sk['range'])
+            orange = None
+            plotfuncstr = fk['type'].split('.')
+            module = __import__(plotfuncstr[0])
+            plotfunc = getattr(module, plotfuncstr[1])
             del sk['loc']
             del sk['range']
             try:
@@ -207,7 +147,8 @@ class mplCanvas(FigureCanvas):
     def updateFromDict(self):
         d = self.parent.mpl_dict
         # Clears the figure before we plot more.
-        try:
+        #try:
+        if True:
             if self.parent.mpl_dict['Update'] == True:
                 # This means that we're updating from the defaults.
                 self.fig.clear()
@@ -273,6 +214,64 @@ class mplCanvas(FigureCanvas):
             for rows in range(0, int(self.parent.mpl_dict['Rows'])):
                 for cols in range(0, int(self.parent.mpl_dict['Columns'])):
                     # Throw in the axes object.
+                    # We only want to do this once per axis.
+                    pd = self.parent.mpl_dict['Figures'][str((rows,cols))]
+                    ax = self.axes[rows,cols]
+                    for i in ['x', 'y']:
+                        for m in ['minor', 'major']:
+                            tp = copy.deepcopy(self.parent.mpl_dict['FigDefaults']['{}_{}_tick_params'.format(i,m)])
+                            for k,v in pd['{}_{}_tick_params'.format(i,m)].items():
+                                if v != '':
+                                    tp[k] = copy.copy(v)
+                                    prop = copy.deepcopy(self.parent.mpl_dict['Fonts']['Default'])
+                                    for k,v in self.parent.mpl_dict['Fonts']['Ticks'].items():
+                                        if v != '':
+                                            prop[k] = copy.copy(v)
+                                        else:
+                                            del prop[k]
+                                        if 'size' in prop:
+                                            tp['labelsize'] = prop['size']
+                                elif tp[k] == '':
+                                    del tp[k]
+                            del tp['axis']
+                            if 'length' in tp:
+                                tp['length'] = int(tp['length'])
+                            if i == 'x':
+                                ax.xaxis.set_tick_params(**tp)
+                            elif i == 'y':
+                                ax.yaxis.set_tick_params(**tp)
+                    sk = dict(self.parent.mpl_dict['DSetDefaults'])
+                    fk = dict(self.parent.mpl_dict['FigDefaults'])
+                    for k, v in pd.items():
+                        if k != "data":
+                            if v is not None and v != "None" and v != '':
+                                fk[k] = copy.copy(v)
+                            #else:
+                            #    fk[k] = copy.copy(v)
+                    if fk['ylabel'] is not None:
+                        prop = copy.deepcopy(self.parent.mpl_dict['Fonts']['Default'])
+                        for k,v in self.parent.mpl_dict['Fonts']['Labels'].items():
+                            if v != '':
+                                prop[k] = copy.copy(v)
+                        ax.set_ylabel(fk['ylabel'], fontdict=prop)
+                    if fk['xlabel'] is not None:
+                        prop = copy.deepcopy(self.parent.mpl_dict['Fonts']['Default'])
+                        for k,v in self.parent.mpl_dict['Fonts']['Labels'].items():
+                            if v != '':
+                                prop[k] = copy.copy(v)
+                        ax.set_xlabel(fk['xlabel'], fontdict=prop)
+                    prop = copy.deepcopy(self.parent.mpl_dict['Fonts']['Default'])
+                    for k,v in self.parent.mpl_dict['Fonts']['Title'].items():
+                        if v != '':
+                            prop[k] = copy.copy(v)
+                    #print(prop)
+                    #import matplotlib
+                    #prop = matplotlib.font_manager.FontProperties(prop)
+                    ax.set_title(fk['title'], fontdict=prop)
+                    if fk['yscale'] != '':
+                        ax.set_yscale(fk['yscale'])
+                    if fk['xscale'] != '':
+                        ax.set_xscale(fk['xscale'])
                     for dset in range(0, int(self.parent.mpl_dict['Datasets'])):
                         if self.parent.mpl_dict['Active'] == str((rows,cols)):
                             self.axes[rows,cols].spines['bottom'].set_color("r")
@@ -294,19 +293,26 @@ class mplCanvas(FigureCanvas):
                             #self.labels.append(self.parent.mpl_dict['Figures'][str((rows,cols))]['Label'])
                             plotted = True
                     self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = False
+                    if fk['ylim'] != '':
+                        ylim = ast.literal_eval(fk['ylim'])
+                        print(ylim)
+                        ax.set_ylim(top=ylim[0], bottom=ylim[1], auto="False")
+                    if fk['xlim'] != '':
+                        xlim = ast.literal_eval(fk['xlim'])
+                        ax.set_xlim(left=xlim[0], right=xlim[1], auto="False")                    
             # Update which dset is active.
             if self.parent.mpl_dict['Active'] is not None:
                 self.setOpenDSet(self.parent.mpl_dict['Active'])
             self.plotLegend()
                 #if plotted:
                 #    self.fig.tight_layout()
-        except Exception as e:
+        '''except Exception as e:
             tb = traceback.format_exc()
             if self.notify_func is not None:
                 self.notify_func(tb)
                 return None
             else:
-                return None
+                return None'''
 
     def plotLegend(self):
         new_handles = []
@@ -362,7 +368,7 @@ class mplCanvas(FigureCanvas):
             #self.parent.mpl_dict['keyTree.Active'].setText(1, str(self.hoverAxes))
             #self.activeAxes = self.hoverAxes
             #FigureCanvas.mousePressEvent(self, event)
-            self.parent.refreshWidgets()
+            #self.parent.refreshWidgets()
             self.update_figure()
 
     def dragEnterEvent(self, event):

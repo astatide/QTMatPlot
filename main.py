@@ -2,7 +2,7 @@
 
 # Stuff to get the window open.
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit, QMenu, QAction, QDockWidget, QMainWindow, QHBoxLayout, QTextEdit, QLabel
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QSizePolicy, QPushButton, QTreeWidget, QTreeWidgetItem, QGraphicsAnchorLayout, QScrollArea, QLineEdit, QMenu, QAction, QDockWidget, QMainWindow, QHBoxLayout, QTextEdit, QLabel, QFileDialog
 from PyQt5.QtGui import QIcon, QCursor
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot
@@ -16,6 +16,7 @@ import seaborn as sns
 import h5py
 import ast
 import copy
+import os
 sns.set_style('ticks')
 sns.set_context('paper')
 sns.axes_style({'font.family': ['monospace'],
@@ -217,12 +218,12 @@ class App(QMainWindow):
         self.mplTree.removeItem(self.mplTree.tree.selectedItems()[0])
 
     def save_figure(self):
-        filename, _ = QFileDialog.getSaveFileName(self.parent, 'Save YAML/PDF', os.getcwd())
+        filename, _ = QFileDialog.getSaveFileName(self, 'Save YAML/PDF', os.getcwd())
         if filename != '':
             self.dc.fig.savefig(filename + ".pdf")
             save_dict = remove_trees(self.mpl_dict)
             with open(filename + '.yml', 'w') as outfile:
-                yaml.dump(save_dict, outfile, default_flow_style=True)
+                yaml.dump(save_dict, outfile, default_flow_style=False)
 
 
     def load_yaml(self, default='src/default.yaml'):
@@ -272,7 +273,7 @@ class App(QMainWindow):
         self.dsetTree.updateTree(new)
         # Neat bit of kit that expands stuff out to the first level.
         # Useful for this tree.
-        self.dsetTree.tree.expandToDepth(0)
+        #self.dsetTree.tree.expandToDepth(0)
         # Well, it no longer seems to die, but.
         # If we want to update this, we're going to have to call a clear function.
         #self.dataTree.updateTree(new)
