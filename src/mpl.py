@@ -387,8 +387,8 @@ class mplCanvas(FigureCanvas):
             #self.parent.mpl_dict['keyTree.Active'].setText(1, str(self.hoverAxes))
             #self.activeAxes = self.hoverAxes
             #FigureCanvas.mousePressEvent(self, event)
-            #self.parent.refreshWidgets()
-            self.update_figure()
+            self.parent.refreshWidgets()
+            #self.update_figure()
 
     def dragEnterEvent(self, event):
         print(event)
