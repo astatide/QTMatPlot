@@ -268,10 +268,6 @@ class mplCanvas(FigureCanvas):
                     #import matplotlib
                     #prop = matplotlib.font_manager.FontProperties(prop)
                     ax.set_title(fk['title'], fontdict=prop)
-                    if fk['yscale'] != '':
-                        ax.set_yscale(fk['yscale'])
-                    if fk['xscale'] != '':
-                        ax.set_xscale(fk['xscale'])
                     for dset in range(0, int(self.parent.mpl_dict['Datasets'])):
                         if self.parent.mpl_dict['Active'] == str((rows,cols)):
                             self.axes[rows,cols].spines['bottom'].set_color("r")
@@ -293,13 +289,36 @@ class mplCanvas(FigureCanvas):
                             #self.labels.append(self.parent.mpl_dict['Figures'][str((rows,cols))]['Label'])
                             plotted = True
                     self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = False
+
+                    if fk['yscale'] != '':
+                        ax.set_yscale(fk['yscale'])
+                    if fk['xscale'] != '':
+                        ax.set_xscale(fk['xscale'])
                     if fk['ylim'] != '':
                         ylim = ast.literal_eval(fk['ylim'])
+                        ax.autoscale(False, axis='y')
                         print(ylim)
-                        ax.set_ylim(top=ylim[0], bottom=ylim[1], auto="False")
+                        ax.set_ybound(lower=ylim[0], upper=ylim[1])
                     if fk['xlim'] != '':
                         xlim = ast.literal_eval(fk['xlim'])
-                        ax.set_xlim(left=xlim[0], right=xlim[1], auto="False")                    
+                        ax.autoscale(False, axis='x')
+                        ax.set_xbound(lower=xlim[0], upper=xlim[1])
+                    if fk['xticks'] != '':
+                        xticks = ast.literal_eval(fk['xticks'])
+                        ax.set_xticks(xticks, minor=False)
+                    if fk['xticklabels'] != '':
+                        xticklabels = ast.literal_eval(fk['xticklabels'])
+                        ax.set_xticklabels(xticklabels)
+                    if fk['yticks'] != '':
+                        print(fk)
+                        yticks = ast.literal_eval(fk['yticks'])
+                        print(yticks)
+                        ax.set_yticks(yticks, minor=False)
+                    if fk['yticklabels'] != '':
+                        # These don't work if you're sharing axes.  Okay, fine.
+                        # Makes sense.
+                        yticklabels = ast.literal_eval(fk['yticklabels'])
+                        ax.set_yticklabels(yticklabels)
             # Update which dset is active.
             if self.parent.mpl_dict['Active'] is not None:
                 self.setOpenDSet(self.parent.mpl_dict['Active'])

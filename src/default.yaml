@@ -29,6 +29,10 @@ FigDefaults:
   xscale: ''
   xlim: ''
   ylim: ''
+  xticks: ''
+  xticklabels: ''
+  yticks: ''
+  yticklabels: ''
   x_major_tick_params:
     axis: 'x'
     which: 'major'
