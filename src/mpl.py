@@ -101,7 +101,37 @@ class mplCanvas(FigureCanvas):
     def plot(self, pd, index, ax):
         # pd is the plot dictionary
         #ax.ticklabel_format(style='sci',scilimits=(0,0), axis='both')
-        ax.tick_params(axis='both', labelsize=float(self.parent.mpl_dict['FontsTicks']['tickfontsize']), length=int(self.parent.mpl_dict['FontsTicks']['ticksize']))
+        for i in ['x', 'y']:
+            for m in ['minor', 'major']:
+                tp = copy.deepcopy(self.parent.mpl_dict['FigDefaults']['{}_{}_tick_params'.format(i,m)])
+                for k,v in pd['{}_{}_tick_params'.format(i,m)].items():
+                    if v != '':
+                        tp[k] = copy.copy(v)
+                        prop = copy.deepcopy(self.parent.mpl_dict['Fonts']['Default'])
+                        for k,v in self.parent.mpl_dict['Fonts']['Ticks'].items():
+                            if v != '':
+                                prop[k] = copy.copy(v)
+                            else:
+                                del prop[k]
+                            if 'size' in prop:
+                                tp['labelsize'] = prop['size']
+                    elif tp[k] == '':
+                        del tp[k]
+                del tp['axis']
+                if 'length' in tp:
+                    tp['length'] = int(tp['length'])
+                if i == 'x':
+                    ax.xaxis.set_tick_params(**tp)
+                elif i == 'y':
+                    ax.yaxis.set_tick_params(**tp)
+        #import matplotlib
+        #prop = matplotlib.font_manager.FontProperties(prop)
+        #for label in ax.get_xticklabels():
+    #        label.set_fontproperties(prop)
+        #for label in ax.get_yticklabels():
+        #    label.set_fontproperties(prop)
+        # Need to see if I can't fix this.
+        #ax.set_fontproperties(prop)
         # Here's where we're going to handle dictionary inheritance.
         sk = dict(self.parent.mpl_dict['DSetDefaults'])
         fk = dict(self.parent.mpl_dict['FigDefaults'])
@@ -119,18 +149,35 @@ class mplCanvas(FigureCanvas):
                 #else:
                 #    fk[k] = copy.copy(v)
         if fk['ylabel'] is not None:
-            ax.set_ylabel(fk['ylabel'], fontsize=float(self.parent.mpl_dict['FontsTicks']['labelsize']), fontweight='bold', fontname=self.parent.mpl_dict['FontsTicks']['fontname'])
+            prop = copy.deepcopy(self.parent.mpl_dict['Fonts']['Default'])
+            for k,v in self.parent.mpl_dict['Fonts']['Labels'].items():
+                if v != '':
+                    prop[k] = copy.copy(v)
+            ax.set_ylabel(fk['ylabel'], fontdict=prop)
         if fk['xlabel'] is not None:
-            ax.set_xlabel(fk['xlabel'], fontsize=float(self.parent.mpl_dict['FontsTicks']['labelsize']), fontweight='bold', fontname=self.parent.mpl_dict['FontsTicks']['fontname'])
-        #if fk['title'] != '':
-        ax.set_title(fk['title'], fontsize=float(self.parent.mpl_dict['FontsTicks']['labelsize']), fontweight='bold', fontname=self.parent.mpl_dict['FontsTicks']['fontname'])
-        # Scientific Notation
-        #ax.yaxis.set_major_formatter(FormatStrFormatter('%.1e'))
-        #ax.yaxis.set_major_formatter(StrMethodFormatter('{x} U'))
-        #ax.set_yscale('log')
-        #sf = ScalarFormatter(useMathText=True)
-        #sf.set_powerlimits((-3,3))
-        #ax.yaxis.set_major_formatter(sf)
+            prop = copy.deepcopy(self.parent.mpl_dict['Fonts']['Default'])
+            for k,v in self.parent.mpl_dict['Fonts']['Labels'].items():
+                if v != '':
+                    prop[k] = copy.copy(v)
+            ax.set_xlabel(fk['xlabel'], fontdict=prop)
+        prop = copy.deepcopy(self.parent.mpl_dict['Fonts']['Default'])
+        for k,v in self.parent.mpl_dict['Fonts']['Title'].items():
+            if v != '':
+                prop[k] = copy.copy(v)
+        #print(prop)
+        #import matplotlib
+        #prop = matplotlib.font_manager.FontProperties(prop)
+        ax.set_title(fk['title'], fontdict=prop)
+        if fk['yscale'] != '':
+            ax.set_yscale(fk['yscale'])
+        if fk['xscale'] != '':
+            ax.set_yscale(fk['xscale'])
+        if fk['ylim'] != '':
+            ylim = ast.literal_eval(fk['ylim'])
+            ax.set_ylim(ylim)
+        if fk['xlim'] != '':
+            xlim = ast.literal_eval(fk['xlim'])
+            ax.set_xlim(xlim)
         if sk['loc'] != 'None':
             loc = copy.deepcopy(sk['loc'])
             irange = copy.deepcopy(sk['range'])
@@ -160,88 +207,106 @@ class mplCanvas(FigureCanvas):
     def updateFromDict(self):
         d = self.parent.mpl_dict
         # Clears the figure before we plot more.
-        if self.parent.mpl_dict['Update'] == True:
-            # This means that we're updating from the defaults.
-            self.fig.clear()
-            #self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']))
-            gridspec_kw = self.parent.mpl_dict['gridspec_kw']
-            subplot_kw = self.parent.mpl_dict['subplot_kw']
-            for k, v in gridspec_kw.items():
-                try:
-                    gridspec_kw[str(k)] = float(v)
-                except:
-                    pass
-            for k, v in subplot_kw.items():
-                try:
-                    subplot_kw[str(k)] = ast.literal_eval(str(v))
-                except:
-                    pass
-            if "PlotSize" in self.parent.mpl_dict:
-                # The width and height parameters are AWFUL: they are fractions of the AVERAGE AXIS WIDTH/LENGTH, respectively.
-                # So here, we're NOW determining the subplot size.
-                gridW = (((float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[0])+(gridspec_kw['wspace']*float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[0]))) * float(d['Columns']))-(gridspec_kw['wspace']*float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[0]))) / float(d['FigureSize']['width'])
-                gridH = (((float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[1])+(gridspec_kw['hspace']*float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[1]))) * float(d['Rows']))-(gridspec_kw['hspace']*float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[1]))) / float(d['FigureSize']['height'])
-                th = (float(d['FigureSize']['height']) - float(d['Title']['height'])) / float(d['FigureSize']['height'])
-                gridspec_kw['top'] = th
-                gridspec_kw['bottom'] = th - (gridH)
-                gridspec_kw['left'] = 0.5 - (gridW/2)
-                gridspec_kw['right'] = 0.5 + (gridW/2)
-                self.parent.mpl_dict['gridspec_kw'] = gridspec_kw
-                #for k in ['left', 'right']
-            self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']), gridspec_kw=gridspec_kw, **subplot_kw)
-            self.al = {}
+        try:
+            if self.parent.mpl_dict['Update'] == True:
+                # This means that we're updating from the defaults.
+                self.fig.clear()
+                #self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']))
+                gridspec_kw = self.parent.mpl_dict['gridspec_kw']
+                subplot_kw = self.parent.mpl_dict['subplot_kw']
+                for k, v in gridspec_kw.items():
+                    try:
+                        gridspec_kw[str(k)] = float(v)
+                    except:
+                        pass
+                for k, v in subplot_kw.items():
+                    try:
+                        subplot_kw[str(k)] = ast.literal_eval(str(v))
+                    except:
+                        pass
+                if "PlotSize" in self.parent.mpl_dict:
+                    # The width and height parameters are AWFUL: they are fractions of the AVERAGE AXIS WIDTH/LENGTH, respectively.
+                    # So here, we're NOW determining the subplot size.
+                    gridW = (((float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[0])+(gridspec_kw['wspace']*float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[0]))) * float(d['Columns']))-(gridspec_kw['wspace']*float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[0]))) / float(d['FigureSize']['width'])
+                    gridH = (((float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[1])+(gridspec_kw['hspace']*float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[1]))) * float(d['Rows']))-(gridspec_kw['hspace']*float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[1]))) / float(d['FigureSize']['height'])
+                    th = (float(d['FigureSize']['height']) - float(d['Title']['height'])) / float(d['FigureSize']['height'])
+                    gridspec_kw['top'] = th
+                    gridspec_kw['bottom'] = th - (gridH)
+                    gridspec_kw['left'] = 0.5 - (gridW/2)
+                    gridspec_kw['right'] = 0.5 + (gridW/2)
+                    self.parent.mpl_dict['gridspec_kw'] = gridspec_kw
+                    #for k in ['left', 'right']
+                self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']), gridspec_kw=gridspec_kw, **subplot_kw)
+                self.al = {}
+                for rows in range(0, int(self.parent.mpl_dict['Rows'])):
+                    for cols in range(0, int(self.parent.mpl_dict['Columns'])):
+                        # We need to update everything.
+                        # So trigger a redraw.
+                        self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = True
+                        self.axes[rows,cols]
+                self.fig.set_dpi(int(d['dpi']))
+                self.fig.set_size_inches(float(d['FigureSize']['width']), float(d['FigureSize']['height']))
+                FigureCanvas.updateGeometry(self)
+                self.parent.mpl_dict['Update'] = False
+            if self.parent.mpl_dict['Resize'] == True:
+                self.parent.mpl_dict['Resize'] = False
+                self.fig.set_dpi(int(d['dpi']))
+                self.fig.set_size_inches(float(d['FigureSize']['width']), float(d['FigureSize']['height']))
+                FigureCanvas.updateGeometry(self)
+            # We check to see if we need to update the figures.
+            # This should just occur on a rebuild, so if we haven't added anything, don't worry about it.
+            active = False
+            plotted = False
+            # First, set the title.  Pull in the default options, then update, if not blank, with the new values.
+            prop = copy.deepcopy(self.parent.mpl_dict['Fonts']['Default'])
+            for k,v in self.parent.mpl_dict['Fonts']['Title'].items():
+                if v != '':
+                    prop[k] = copy.copy(v)
+            import matplotlib
+            fontprop = matplotlib.font_manager.FontProperties()
+            fontprop.set_family(prop['family'])
+            fontprop.set_weight(prop['weight'])
+            fontprop.set_size(prop['size'])
+            self.fig.suptitle(self.parent.mpl_dict['Title']['label'], fontproperties=fontprop)
+            self.handles = []
+            self.labels = []
             for rows in range(0, int(self.parent.mpl_dict['Rows'])):
                 for cols in range(0, int(self.parent.mpl_dict['Columns'])):
-                    # We need to update everything.
-                    # So trigger a redraw.
-                    self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = True
-                    self.axes[rows,cols]
-            self.fig.set_dpi(int(d['dpi']))
-            self.fig.set_size_inches(float(d['FigureSize']['width']), float(d['FigureSize']['height']))
-            FigureCanvas.updateGeometry(self)
-            self.parent.mpl_dict['Update'] = False
-        if self.parent.mpl_dict['Resize'] == True:
-            self.parent.mpl_dict['Resize'] = False
-            self.fig.set_dpi(int(d['dpi']))
-            self.fig.set_size_inches(float(d['FigureSize']['width']), float(d['FigureSize']['height']))
-            FigureCanvas.updateGeometry(self)
-        # We check to see if we need to update the figures.
-        # This should just occur on a rebuild, so if we haven't added anything, don't worry about it.
-        active = False
-        plotted = False
-        self.fig.suptitle(self.parent.mpl_dict['Title']['label'], fontsize=self.parent.mpl_dict['FontsTicks']['titlesize'], fontname=self.parent.mpl_dict['FontsTicks']['fontname'])
-        self.handles = []
-        self.labels = []
-        for rows in range(0, int(self.parent.mpl_dict['Rows'])):
-            for cols in range(0, int(self.parent.mpl_dict['Columns'])):
-                # Throw in the axes object.
-                for dset in range(0, int(self.parent.mpl_dict['Datasets'])):
-                    if self.parent.mpl_dict['Active'] == str((rows,cols)):
-                        self.axes[rows,cols].spines['bottom'].set_color("r")
-                        self.axes[rows,cols].spines['left'].set_color("r")
-                    else:
-                        self.axes[rows,cols].spines['bottom'].set_color("black")
-                        self.axes[rows,cols].spines['left'].set_color("black")
-                    if 'Update' not in self.parent.mpl_dict['Figures'][str((rows,cols))]:
-                        self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = True
-                    if self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] == True:
-                        if dset == 0:
-                            # Only clear this during the first new drawing pass
-                            self.axes[rows,cols].clear()
-                        self.handles.append(self.plot(self.parent.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols]))
-                        #handle, label = self.axes[rows,cols].get_legend_handles_labels()
-                        #self.handles.append(handle)
-                        if self.parent.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)]['label'] != "None":
-                            self.labels.append(self.parent.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)]['label'])
-                        #self.labels.append(self.parent.mpl_dict['Figures'][str((rows,cols))]['Label'])
-                        plotted = True
-                self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = False
-        # Update which dset is active.
-        if self.parent.mpl_dict['Active'] is not None:
-            self.setOpenDSet(self.parent.mpl_dict['Active'])
-        self.plotLegend()
-            #if plotted:
-            #    self.fig.tight_layout()
+                    # Throw in the axes object.
+                    for dset in range(0, int(self.parent.mpl_dict['Datasets'])):
+                        if self.parent.mpl_dict['Active'] == str((rows,cols)):
+                            self.axes[rows,cols].spines['bottom'].set_color("r")
+                            self.axes[rows,cols].spines['left'].set_color("r")
+                        else:
+                            self.axes[rows,cols].spines['bottom'].set_color("black")
+                            self.axes[rows,cols].spines['left'].set_color("black")
+                        if 'Update' not in self.parent.mpl_dict['Figures'][str((rows,cols))]:
+                            self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = True
+                        if self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] == True:
+                            if dset == 0:
+                                # Only clear this during the first new drawing pass
+                                self.axes[rows,cols].clear()
+                            self.handles.append(self.plot(self.parent.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols]))
+                            #handle, label = self.axes[rows,cols].get_legend_handles_labels()
+                            #self.handles.append(handle)
+                            if self.parent.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)]['label'] != "None":
+                                self.labels.append(self.parent.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)]['label'])
+                            #self.labels.append(self.parent.mpl_dict['Figures'][str((rows,cols))]['Label'])
+                            plotted = True
+                    self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = False
+            # Update which dset is active.
+            if self.parent.mpl_dict['Active'] is not None:
+                self.setOpenDSet(self.parent.mpl_dict['Active'])
+            self.plotLegend()
+                #if plotted:
+                #    self.fig.tight_layout()
+        except Exception as e:
+            tb = traceback.format_exc()
+            if self.notify_func is not None:
+                self.notify_func(tb)
+                return None
+            else:
+                return None
 
     def plotLegend(self):
         new_handles = []
@@ -256,8 +321,12 @@ class mplCanvas(FigureCanvas):
                 ncol = int(self.parent.mpl_dict['Legend']['ncol'])
             else:
                 ncol = len(self.labels)
-            prop={'family': self.parent.mpl_dict['FontsTicks']['fontname'],'weight':'roman', 'size': self.parent.mpl_dict['FontsTicks']['legendsize']}
-            self.fig.legend(new_handles, self.labels, loc=self.parent.mpl_dict['Legend']['loc'], ncol=ncol, fontsize=self.parent.mpl_dict['FontsTicks']['legendsize'], prop=prop)
+            #prop={'family': self.parent.mpl_dict['FontsTicks']['fontname'],'weight':'roman', 'size': self.parent.mpl_dict['FontsTicks']['legendsize']}
+            prop = copy.deepcopy(self.parent.mpl_dict['Fonts']['Default'])
+            for k,v in self.parent.mpl_dict['Fonts']['Legend'].items():
+                if v != '':
+                    prop[k] = copy.copy(v)
+            self.fig.legend(new_handles, self.labels, loc=self.parent.mpl_dict['Legend']['loc'], ncol=ncol, prop=prop)
             #self.fig.legend()
         except Exception as e:
             print(e)

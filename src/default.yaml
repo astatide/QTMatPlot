@@ -25,6 +25,74 @@ FigDefaults:
   width: None
   xlabel: ''
   ylabel: ''
+  yscale: ''
+  xscale: ''
+  xlim: ''
+  ylim: ''
+  x_major_tick_params:
+    axis: 'x'
+    which: 'major'
+    direction: ''
+    length: ''
+    width: ''
+    color: ''
+    labelbottom: ''
+    labeltop: ''
+    labelleft: ''
+    labelright: ''
+    rotation: ''
+    bottom: ''
+    top: ''
+    left: ''
+    right: ''
+  x_minor_tick_params:
+    axis: 'x'
+    which: 'minor'
+    direction: ''
+    length: ''
+    width: ''
+    color: ''
+    labelbottom: ''
+    labeltop: ''
+    labelleft: ''
+    labelright: ''
+    rotation: ''
+    bottom: ''
+    top: ''
+    left: ''
+    right: ''
+  y_major_tick_params:
+    axis: 'y'
+    which: 'major'
+    direction: ''
+    length: ''
+    width: ''
+    color: ''
+    labelbottom: ''
+    labeltop: ''
+    labelleft: ''
+    labelright: ''
+    rotation: ''
+    bottom: ''
+    top: ''
+    left: ''
+    right: ''
+  y_minor_tick_params:
+    axis: 'y'
+    which: 'minor'
+    direction: ''
+    length: ''
+    width: ''
+    color: ''
+    labelbottom: ''
+    labeltop: ''
+    labelleft: ''
+    labelright: ''
+    rotation: ''
+    bottom: ''
+    top: ''
+    left: ''
+    right: ''
 Figures: {}
 FilesToLoad: "[]"
 Resize: true
@@ -34,13 +102,27 @@ dpi: 300
 FigureSize:
   height: 4
   width: 7
-FontsTicks:
-  tickfontsize: 4
-  ticksize: 3
-  titlesize: 8
-  labelsize: 4
-  legendsize: 4
-  fontname: 'Alte Haas Grotesk'
+Fonts:
+  Default:
+    family: 'Alte Haas Grotesk'
+    weight: 'roman'
+    size: 4
+  Title:
+    family: ''
+    weight: 'bold'
+    size: 8
+  Ticks:
+    family: ''
+    weight: ''
+    size: 4
+  Labels:
+    family: ''
+    weight: 'bold'
+    size: 4
+  Legend:
+    family: ''
+    weight: 'bold'
+    size: 6
 PlotSize: (1.294,.8)
 Title:
   label: ''
