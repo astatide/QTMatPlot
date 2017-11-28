@@ -217,10 +217,12 @@ class App(QMainWindow):
         self.mplTree.removeItem(self.mplTree.tree.selectedItems()[0])
 
     def save_figure(self):
-        self.dc.fig.savefig("test.pdf")
-        save_dict = remove_trees(self.mpl_dict)
-        with open('test.yml', 'w') as outfile:
-            yaml.dump(save_dict, outfile, default_flow_style=False)
+        filename, _ = QFileDialog.getSaveFileName(self.parent, 'Save YAML/PDF', os.getcwd())
+        if filename != '':
+            self.dc.fig.savefig(filename + ".pdf")
+            save_dict = remove_trees(self.mpl_dict)
+            with open(filename + '.yml', 'w') as outfile:
+                yaml.dump(save_dict, outfile, default_flow_style=True)
 
 
     def load_yaml(self, default='src/default.yaml'):
@@ -265,7 +267,7 @@ class App(QMainWindow):
             self.dc.setOpenDSet(self.mpl_dict['Active'])
         self.dsetBox.comboBox.setCurrentIndex(self.dsetBox.comboBox.findText(str(self.mpl_dict['ActiveDSet'])))
         self.mplTree.updateTree(new)
-        self.dataTree.updateTree(new)
+        #self.dataTree.updateTree(new)
         # It does need to be cleared, but we should try and open the parent item.
         self.dsetTree.updateTree(new)
         # Neat bit of kit that expands stuff out to the first level.

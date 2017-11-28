@@ -41,7 +41,7 @@ FontsTicks:
   labelsize: 4
   legendsize: 4
   fontname: 'Alte Haas Grotesk'
-PlotSize: (1.449,.9)
+PlotSize: (1.294,.8)
 Title:
   label: ''
   height: 0.25
