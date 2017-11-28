@@ -29,6 +29,7 @@ import yaml
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.backend_bases import key_press_handler
+from matplotlib.ticker import FormatStrFormatter, ScalarFormatter, StrMethodFormatter
 
 #from matplotlib import rc
 #rc('font',**{'family':'sans-serif','sans-serif':['Coolvetica']})
@@ -99,6 +100,7 @@ class mplCanvas(FigureCanvas):
 
     def plot(self, pd, index, ax):
         # pd is the plot dictionary
+        #ax.ticklabel_format(style='sci',scilimits=(0,0), axis='both')
         ax.tick_params(axis='both', labelsize=float(self.parent.mpl_dict['FontsTicks']['tickfontsize']), length=int(self.parent.mpl_dict['FontsTicks']['ticksize']))
         # Here's where we're going to handle dictionary inheritance.
         sk = dict(self.parent.mpl_dict['DSetDefaults'])
@@ -122,6 +124,13 @@ class mplCanvas(FigureCanvas):
             ax.set_xlabel(fk['xlabel'], fontsize=float(self.parent.mpl_dict['FontsTicks']['labelsize']), fontweight='bold', fontname=self.parent.mpl_dict['FontsTicks']['fontname'])
         #if fk['title'] != '':
         ax.set_title(fk['title'], fontsize=float(self.parent.mpl_dict['FontsTicks']['labelsize']), fontweight='bold', fontname=self.parent.mpl_dict['FontsTicks']['fontname'])
+        # Scientific Notation
+        #ax.yaxis.set_major_formatter(FormatStrFormatter('%.1e'))
+        #ax.yaxis.set_major_formatter(StrMethodFormatter('{x} U'))
+        #ax.set_yscale('log')
+        #sf = ScalarFormatter(useMathText=True)
+        #sf.set_powerlimits((-3,3))
+        #ax.yaxis.set_major_formatter(sf)
         if sk['loc'] != 'None':
             loc = copy.deepcopy(sk['loc'])
             irange = copy.deepcopy(sk['range'])
