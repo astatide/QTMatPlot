@@ -50,9 +50,8 @@ class dataLoader():
         pass
 
     def loadNewFile(self, filename=None):
-        if filename == None:
+        if filename == False or filename == None:
             filename, _ = QFileDialog.getOpenFileName(self.parent, 'Open Data File', os.getcwd())
-        print(filename)
         if filename != '':
             try:
                 newFile = self.loadHDF5(filename)
@@ -73,7 +72,6 @@ class dataLoader():
 
     def loadNewYaml(self):
         filename, _ = QFileDialog.getOpenFileName(self.parent, 'Open Yaml File', os.getcwd())
-        print(filename)
         if filename != '':
             self.parent.load_yaml(filename)
             self.parent.mpl_dict['keyTree'] = {}
@@ -85,7 +83,6 @@ class dataLoader():
             #self.parent.mpl_dict = self.parent.dataTree.data
             #self.parent.mplTree.updateTree(True)
             #self.parent.dataTree.updateTree()
-            print(self.parent.mpl_dict)
             #self.parent.refreshWidgets(new=True)
 
     def loadHDF5(self, filename):
@@ -101,7 +98,6 @@ class dataLoader():
             return dict(f)
 
     def loadPickle(self, filename):
-        print(filename)
         try:
             # Appropriate for Python3 pickles
             f = pickle.load( open(filename, 'rb') )

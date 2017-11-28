@@ -67,7 +67,6 @@ class App(QMainWindow):
         self.height = 800
         self.mpl_dict = {}
         self.load_yaml()
-        print(self.mpl_dict)
         self.mpl_dict['FigDefaults']['data'] = {}
         self.mpl_dict['Active'] = str((0,0))
         self.initUI()
@@ -199,7 +198,6 @@ class App(QMainWindow):
         self.mpl_dict['FilesToLoad'] = str(self.dataLoader.fileList)
         self.dataTree.updateTree()
         self.dataTree.tree.expandToDepth(0)
-        print("FILE LOADED")
         self.mplTree.updateTree()
 
     def addToDict(self):
@@ -231,7 +229,9 @@ class App(QMainWindow):
         # We want to push a lot of this to later.
         self.mpl_dict.update(copy.deepcopy(test))
         self.mpl_dict['Update'] = True
-        for f in list(self.mpl_dict['FilesToLoad']):
+        print(ast.literal_eval(self.mpl_dict['FilesToLoad']))
+        for f in ast.literal_eval(self.mpl_dict['FilesToLoad']):
+            print(f)
             try:
                 # Does seem to work.
                 self.loadNewFile(f)

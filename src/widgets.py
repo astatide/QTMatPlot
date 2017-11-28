@@ -158,9 +158,7 @@ class newTree():
                 self.tree.clear()
                 # Also, delete the keys in the tree.
                 #self.parent.mpl_dict['keyTree'] = {}
-            print("UPDATIG THR")
             self.handleDict(self.data, self.tree, tree_dict=self.data['keyTree'], new=new)
-            print(self.data['keyTree'])
         self.tree.itemChanged.connect(self.onItemChanged)
 
     def getFigures(self):
@@ -330,7 +328,6 @@ class newTree():
         dictItem[item.data(0,0)] = item.data(1,0)
         #else:
         #    self.parent.mpl_dict[item.data(0,0)] = item.data(1,0)
-        print(item.data(0,0), item.data(1,0), dictItem[item.data(0,0)])
         item.oldValue = [item.data(0,0), item.data(1,0)]
         #self.removeItem(item)
         #self.addItem(item)
@@ -367,10 +364,8 @@ class newTree():
 
         # Now, we add the new key: pair value into the original dictionary.
         # Once we call the update function, it'll regenerate the QTreeWidgetItem
-        print(ddict, keys)
         if ddict is None:
             dictItem[item.data(0,0)] = item.data(1,0)
-            print(item.data(0,0), item.data(1,0), dictItem[item.data(0,0)])
             item.oldValue = [item.data(0,0), item.data(1,0)]
         else:
             dictItem[ddict[0]] = ddict[1]
@@ -413,12 +408,8 @@ class newTree():
             self.parent.mpl_dict['Figures'][str(keys[1])]['Update'] = True'''
         new = True
         self.parent.mpl_dict['Update'] = True
-        if keys[0] == 'Datasets':
-            print(self.parent.mpl_dict)
         if keys[0] == 'Figures':
             # We do need to trigger a total redraw.
-            print("YES!")
-            print(str(keys[1]))
             self.parent.mpl_dict['Figures'][str(keys[1])]['Update'] = True
         #self.updateTree()
         # This function definitly needs updating.

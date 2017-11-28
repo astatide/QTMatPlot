@@ -26,21 +26,27 @@ FigDefaults:
   xlabel: ''
   ylabel: ''
 Figures: {}
-FilesToLoad: IGNORE
+FilesToLoad: "[]"
 Resize: true
 Rows: 2
 Update: true
 dpi: 300
-figsize:
+FigureSize:
   height: 4
   width: 7
-fontsize:
-  fontsize: 6
+FontsTicks:
+  tickfontsize: 4
   ticksize: 3
   titlesize: 8
-GridRatio: (1.449,.9)
-Title: ''
-TitleHeight: 0.4
+  legendsize: 4
+  fontname: 'Alte Haas Grotesk'
+PlotSize: (1.449,.9)
+Title:
+  label: ''
+  height: 0.25
+Legend:
+  ncol: 'Auto'
+  loc: 'lower center'
 gridspec_kw:
   bottom: 0.1
   hspace: 0.3
@@ -53,4 +59,4 @@ subplot_kw:
   sharex: true
   sharey: true
 hidden_keys: ['keyTree', 'Active', 'ActiveDSet', 'Update', 'keyOrder', 'Resize', 'hidden_keys']
-keyOrder: ['FilesToLoad', 'Colors', 'Columns', 'Rows', 'Datasets', 'figsize', 'dpi', 'gridspec_kw', 'GridRatio', 'fontsize', 'Title', 'TitleHeight', 'subplot_kw', 'FigDefaults', 'DSetDefaults', 'Figures', 'keyTree', 'Active', 'ActiveDSet', 'Update', 'keyOrder', 'Resize', 'hidden_keys']
+keyOrder: ['FilesToLoad', 'Colors', 'Columns', 'Rows', 'Datasets', 'FigureSize', 'dpi', 'gridspec_kw', 'PlotSize', 'Fonts', 'Title', 'Legend', 'subplot_kw', 'FigDefaults', 'DSetDefaults', 'Figures', 'keyTree', 'Active', 'ActiveDSet', 'Update', 'keyOrder', 'Resize', 'hidden_keys']
