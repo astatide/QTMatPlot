@@ -86,7 +86,7 @@ class App(QMainWindow):
         self.text = newTextBox(self, size=(0,30), pos=(self.save_button.button.width()+250, self.height-30), init_text="Welcome!")
         self.text.textBox.setGeometry(self.save_button.button.width()+self.load_button.button.width(), self.height-30, self.width-self.save_button.button.width(), 15)
         self.mplTree = newTree(self, self.mpl_dict, pos=(self.width-250,0), size=(250,self.height-30-100), col=1, function=self.updateFromDict, rows=True, notify_func=self.notify)
-        self.dsetTree = newTree(self, self.mpl_dict['Figures'].get(str(self.dc.activeAxes)), pos=(self.width-250,0), size=(250,50), col=1, function=self.updateFromDict, rows=True)
+        self.dsetTree = newTree(self, self.mpl_dict['Figures'].get(str(self.dc.activeAxes)), pos=(self.width-250,0), size=(250,50), col=1, function=self.updateFromDict, rows=True, dset=str(self.dc.activeAxes))
         self.dataTree = newTree(self, self.dataLoader.dataStructure, pos=(0, 0), size=(250,self.height-30), col=3, clickable=True, editable=False, function=self.text.showText, function2=self.updateFromDict, get_figures=self.mplTree.getFigures, mpl=self.mpl_dict, notify_func=self.notify)
         self.dataTree.tree.setDragEnabled(True)
         self.dataTree.tree.expandToDepth(0)
@@ -259,6 +259,7 @@ class App(QMainWindow):
         # Actually, we basically always need to blow this away.
         self.mpl_dict['Figures'][str(self.mpl_dict['Active'])]['keyTree'] = {}
         self.dsetTree.data = self.mpl_dict['Figures'].get(str(self.mpl_dict['Active']))
+        self.dsetTree.activeDset = str(self.mpl_dict['Active'])
         self.dsetBox.reInit(range(0, int(self.mpl_dict['Datasets'])))
         if self.mpl_dict['Active'] is not None:
             self.dc.setOpenDSet(self.mpl_dict['Active'])

@@ -58,7 +58,7 @@ def remove_trees(idict, odict=None):
 
 # For displaying data in a tree.
 class newTree():
-    def __init__(self, parent, data, pos, col=1, rows=True, size=None, editable=True, clickable=False, function=None, get_figures=None, mpl=None, function2=None, notify_func=None):
+    def __init__(self, parent, data, pos, col=1, rows=True, size=None, editable=True, clickable=False, function=None, get_figures=None, mpl=None, function2=None, notify_func=None, dset=None):
         self.tree = QTreeWidget(parent)
         self.tree.setColumnCount(col+1)
         #self.tree.setSortingEnabled(True)
@@ -69,6 +69,7 @@ class newTree():
         self.col = col+1
         self.pos = pos
         self.size = size
+        self.dset = dset
         self.tree.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding)
         self.data = data
         self.data['keyTree'] = {}
@@ -315,7 +316,12 @@ class newTree():
         try:
             item.parent().removeChild(item)
         except:
-            self.tree.takeTopLevelItem(int(self.tree.indexFromItem(treeItem['keyTree.{}'.format(item.oldValue[0])]).row()))
+            # For one widget, this may not exist.
+            #self.tree.takeTopLevelItem(int(self.tree.indexFromItem(treeItem['keyTree.{}'.format(item.oldValue[0])]).row()))
+            try:
+                self.tree.takeTopLevelItem(int(self.tree.indexFromItem(treeItem['keyTree.{}'.format(item.oldValue[0])]).row()))
+            except:
+                self.tree.takeTopLevelItem(int(self.tree.indexFromItem(treeItem['Figures'][self.dset]['keyTree.{}'.format(item.oldValue[0])]).row()))
         # Now, remove the widget from the keyTree; this way, it'll be recreated.
         try:
             del treeItem['keyTree.{}'.format(item.oldValue[0])]
@@ -348,7 +354,10 @@ class newTree():
         try:
             item.parent().removeChild(item)
         except:
-            self.tree.takeTopLevelItem(int(self.tree.indexFromItem(treeItem['keyTree.{}'.format(item.oldValue[0])]).row()))
+            try:
+                self.tree.takeTopLevelItem(int(self.tree.indexFromItem(treeItem['keyTree.{}'.format(item.oldValue[0])]).row()))
+            except:
+                self.tree.takeTopLevelItem(int(self.tree.indexFromItem(treeItem['Figures']['keyTree.{}'.format(item.oldValue[0])]).row()))
         # Now, remove the widget from the keyTree; this way, it'll be recreated.
         try:
             del treeItem['keyTree.{}'.format(item.oldValue[0])]

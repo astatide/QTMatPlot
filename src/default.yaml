@@ -38,6 +38,7 @@ FontsTicks:
   tickfontsize: 4
   ticksize: 3
   titlesize: 8
+  labelsize: 4
   legendsize: 4
   fontname: 'Alte Haas Grotesk'
 PlotSize: (1.449,.9)

@@ -117,11 +117,11 @@ class mplCanvas(FigureCanvas):
                 #else:
                 #    fk[k] = copy.copy(v)
         if fk['ylabel'] is not None:
-            ax.set_ylabel(fk['ylabel'], fontsize=float(self.parent.mpl_dict['FontsTicks']['titlesize']), fontweight='bold', fontname=self.parent.mpl_dict['FontsTicks']['fontname'])
+            ax.set_ylabel(fk['ylabel'], fontsize=float(self.parent.mpl_dict['FontsTicks']['labelsize']), fontweight='bold', fontname=self.parent.mpl_dict['FontsTicks']['fontname'])
         if fk['xlabel'] is not None:
-            ax.set_xlabel(fk['xlabel'], fontsize=float(self.parent.mpl_dict['FontsTicks']['titlesize']), fontweight='bold', fontname=self.parent.mpl_dict['FontsTicks']['fontname'])
+            ax.set_xlabel(fk['xlabel'], fontsize=float(self.parent.mpl_dict['FontsTicks']['labelsize']), fontweight='bold', fontname=self.parent.mpl_dict['FontsTicks']['fontname'])
         #if fk['title'] != '':
-        ax.set_title(fk['title'], fontsize=float(self.parent.mpl_dict['FontsTicks']['titlesize']), fontweight='bold', fontname=self.parent.mpl_dict['FontsTicks']['fontname'])
+        ax.set_title(fk['title'], fontsize=float(self.parent.mpl_dict['FontsTicks']['labelsize']), fontweight='bold', fontname=self.parent.mpl_dict['FontsTicks']['fontname'])
         if sk['loc'] != 'None':
             loc = copy.deepcopy(sk['loc'])
             irange = copy.deepcopy(sk['range'])
@@ -249,7 +249,7 @@ class mplCanvas(FigureCanvas):
                 ncol = int(self.parent.mpl_dict['Legend']['ncol'])
             else:
                 ncol = len(self.labels)
-            prop={'family': self.parent.mpl_dict['FontsTicks']['fontname'],'weight':'roman'}
+            prop={'family': self.parent.mpl_dict['FontsTicks']['fontname'],'weight':'roman', 'size': self.parent.mpl_dict['FontsTicks']['legendsize']}
             self.fig.legend(new_handles, self.labels, loc=self.parent.mpl_dict['Legend']['loc'], ncol=ncol, fontsize=self.parent.mpl_dict['FontsTicks']['legendsize'], prop=prop)
             #self.fig.legend()
         except Exception as e:
