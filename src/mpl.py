@@ -175,8 +175,8 @@ class mplCanvas(FigureCanvas):
                 th = (float(d['FigureSize']['height']) - float(d['Title']['height'])) / float(d['FigureSize']['height'])
                 gridspec_kw['top'] = th
                 gridspec_kw['bottom'] = th - (gridH)
-                gridspec_kw['left'] = 0
-                gridspec_kw['right'] = 0 + (gridW)
+                gridspec_kw['left'] = 0.5 - (gridW/2)
+                gridspec_kw['right'] = 0.5 + (gridW/2)
                 self.parent.mpl_dict['gridspec_kw'] = gridspec_kw
                 #for k in ['left', 'right']
             self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']), gridspec_kw=gridspec_kw, **subplot_kw)
