@@ -168,17 +168,15 @@ class mplCanvas(FigureCanvas):
                 except:
                     pass
             if "PlotSize" in self.parent.mpl_dict:
-                #print((self.parent.mpl_dict['GridRatio'][0]), (d['Columns']), (d['FigureSize']['width']))
-                gridH = (float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[0]) * float(d['Columns']) / float(d['FigureSize']['width'])) / 2
-                gridW = (float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[1]) * float(d['Rows']) / float(d['FigureSize']['height'])) / 2
-                #if "Title" in self.parent.mpl_dict:
+                # The width and height parameters are AWFUL: they are fractions of the AVERAGE AXIS WIDTH/LENGTH, respectively.
+                # So here, we're NOW determining the subplot size.
+                gridW = (((float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[0])+(gridspec_kw['wspace']*float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[0]))) * float(d['Columns']))-(gridspec_kw['wspace']*float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[0]))) / float(d['FigureSize']['width'])
+                gridH = (((float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[1])+(gridspec_kw['hspace']*float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[1]))) * float(d['Rows']))-(gridspec_kw['hspace']*float(ast.literal_eval(self.parent.mpl_dict['PlotSize'])[1]))) / float(d['FigureSize']['height'])
                 th = (float(d['FigureSize']['height']) - float(d['Title']['height'])) / float(d['FigureSize']['height'])
-                #else:
-                #    th = .9
                 gridspec_kw['top'] = th
-                gridspec_kw['bottom'] = th - (2*gridW)
-                gridspec_kw['left'] = 0.5 - gridH
-                gridspec_kw['right'] = 0.5 + gridH
+                gridspec_kw['bottom'] = th - (gridH)
+                gridspec_kw['left'] = 0
+                gridspec_kw['right'] = 0 + (gridW)
                 self.parent.mpl_dict['gridspec_kw'] = gridspec_kw
                 #for k in ['left', 'right']
             self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']), gridspec_kw=gridspec_kw, **subplot_kw)
