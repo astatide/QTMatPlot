@@ -45,7 +45,10 @@ def shade(ax, data, irange, index, sk):
     return handle
 
 def bar_bf(ax, data, irange, index, sk):
-    handle, = ax.bar(data['BF'][-1], **sk)
+    print(data['efficiency_BF'])
+    point = data['efficiency_BF'].shape[0]-1
+    #sk['log'] = True
+    handle, = ax.bar(int(index), data['efficiency_BF'][:][point], **sk)
     # I used timepoint in the dataframe.
     #print(data['timepoint'])
     #handle, = ax.plot(data['timepoint'], data['expected'][:], **sk)

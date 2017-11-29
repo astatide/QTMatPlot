@@ -16,6 +16,7 @@ DSetDefaults:
   loc: None
   range: None
   label: None
+  index: None
 Datasets: 1
 FigDefaults:
   Update: true

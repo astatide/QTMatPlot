@@ -131,7 +131,8 @@ class mplCanvas(FigureCanvas):
             loc = copy.deepcopy(sk['loc'])
             irange = copy.deepcopy(sk['range'])
             if 'index' in sk:
-                orange = sk['index']
+                orange = copy.deepcopy(sk['index'])
+                del sk['index']
             else:
                 orange = None
             plotfuncstr = fk['type'].split('.')
@@ -294,17 +295,21 @@ class mplCanvas(FigureCanvas):
                             if dset == 0:
                                 # Only clear this during the first new drawing pass
                                 self.axes[rows,cols].clear()
-                            self.handles.append(self.plot(self.parent.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols]))
+                            handle = self.plot(self.parent.mpl_dict['Figures'][str((rows,cols))], dset, self.axes[rows,cols])
                             #handle, label = self.axes[rows,cols].get_legend_handles_labels()
                             #self.handles.append(handle)
                             if self.parent.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)]['label'] != "None":
                                 self.labels.append(self.parent.mpl_dict['Figures'][str((rows,cols))]['data'][str(dset)]['label'])
+                                self.handles.append(handle)
                             #self.labels.append(self.parent.mpl_dict['Figures'][str((rows,cols))]['Label'])
                             plotted = True
                     self.parent.mpl_dict['Figures'][str((rows,cols))]['Update'] = False
 
                     if fk['yscale'] != '':
-                        ax.set_yscale(fk['yscale'])
+                        if fk['yscale'] == 'log':
+                            ax.set_yscale(fk['yscale'], nonposy='clip')
+                        else:
+                            ax.set_yscale(fk['yscale'])
                     if fk['xscale'] != '':
                         ax.set_xscale(fk['xscale'])
                     if fk['ylim'] != '':
@@ -321,7 +326,12 @@ class mplCanvas(FigureCanvas):
                         ax.set_xticks(xticks, minor=False)
                     if fk['xticklabels'] != '':
                         xticklabels = ast.literal_eval(fk['xticklabels'])
-                        ax.set_xticklabels(xticklabels)
+                        if 'xticklabelrotation' in fk:
+                            if fk['xticklabelrotation'] != '':
+                                xticklabelrotation = ast.literal_eval(fk['xticklabelrotation'])
+                            else:
+                                xticklabelrotation = None
+                        ax.set_xticklabels(xticklabels, rotation=xticklabelrotation)
                     if fk['yticks'] != '':
                         print(fk)
                         yticks = ast.literal_eval(fk['yticks'])
