@@ -43,3 +43,12 @@ def shade(ax, data, irange, index, sk):
     #ax.fill_between(data['timepoint'], data['ci_ubound'][:], data['ci_lbound'][:], **sk)
     ax.fill_between(range(0, data['expected'][:].shape[0]), data['ci_ubound'][:], data['ci_lbound'][:], **sk)
     return handle
+
+def bar_bf(ax, data, irange, index, sk):
+    handle, = ax.bar(data['BF'][-1], **sk)
+    # I used timepoint in the dataframe.
+    #print(data['timepoint'])
+    #handle, = ax.plot(data['timepoint'], data['expected'][:], **sk)
+    #sk['alpha'] = .3
+    #ax.fill_between(data['timepoint'], data['ci_ubound'][:], data['ci_lbound'][:], **sk)
+    return handle

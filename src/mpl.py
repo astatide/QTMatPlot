@@ -184,6 +184,10 @@ class mplCanvas(FigureCanvas):
                     self.parent.mpl_dict['gridspec_kw'] = gridspec_kw
                     #for k in ['left', 'right']
                 self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']), gridspec_kw=gridspec_kw, **subplot_kw)
+                if int(d['Rows']) == 1:
+                    self.axes = self.axes[np.newaxis,:]
+                if int(d['Columns']) == 1:
+                    self.axes = self.axes[:,np.newaxis]
                 self.al = {}
                 for rows in range(0, int(self.parent.mpl_dict['Rows'])):
                     for cols in range(0, int(self.parent.mpl_dict['Columns'])):
