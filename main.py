@@ -242,6 +242,7 @@ class App(QMainWindow):
         # We want to push a lot of this to later.
         self.mpl_dict.update(copy.deepcopy(test))
         self.mpl_dict['Update'] = True
+        self.mpl_dict['Active'] = (0,0)
         #print(ast.literal_eval(self.mpl_dict['FilesToLoad']))
         for f in self.mpl_dict['FilesToLoad']:
             print(f)

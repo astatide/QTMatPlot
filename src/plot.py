@@ -35,13 +35,19 @@ from matplotlib.backend_bases import key_press_handler
 
 #handle = plotfunc(ax, self.translate_location(loc), irange, orange, **sk)
 def shade(ax, data, irange, index, sk):
-    handle, = ax.plot(data['expected'][:], **sk)
+    if index != 'BF':
+        handle, = ax.plot(data['expected'][:], **sk)
     # I used timepoint in the dataframe.
     #print(data['timepoint'])
     #handle, = ax.plot(data['timepoint'], data['expected'][:], **sk)
     sk['alpha'] = .3
     #ax.fill_between(data['timepoint'], data['ci_ubound'][:], data['ci_lbound'][:], **sk)
-    ax.fill_between(range(0, data['expected'][:].shape[0]), data['ci_ubound'][:], data['ci_lbound'][:], **sk)
+    # But what I really need is just a black range for BF.
+    if index != 'BF':
+        ax.fill_between(range(0, data['expected'][:].shape[0]), data['ci_ubound'][:], data['ci_lbound'][:], **sk)
+    else:
+        point = data['expected'].shape[0]-1
+        handle = ax.axhspan(data['ci_ubound'][point], data['ci_lbound'][point], **sk)
     return handle
 
 def bar_bf(ax, data, irange, index, sk):
@@ -51,6 +57,34 @@ def bar_bf(ax, data, irange, index, sk):
         ax.axhline(y=1,color='black', alpha=.3, lw=.5)
     #sk['log'] = True
     handle, = ax.bar(int(index), data['efficiency_BF'][:][point], **sk)
+    # I used timepoint in the dataframe.
+    #print(data['timepoint'])
+    #handle, = ax.plot(data['timepoint'], data['expected'][:], **sk)
+    #sk['alpha'] = .3
+    #ax.fill_between(data['timepoint'], data['ci_ubound'][:], data['ci_lbound'][:], **sk)
+    return handle
+
+def bar_ss(ax, data, irange, index, sk):
+    print(data['efficiency_EQ vs. SS'])
+    point = data['efficiency_EQ vs. SS'].shape[0]-1
+    if int(index) == 1:
+        ax.axhline(y=1,color='black', alpha=.3, lw=.5)
+    #sk['log'] = True
+    handle, = ax.bar(int(index), data['efficiency_EQ vs. SS'][:][point], **sk)
+    # I used timepoint in the dataframe.
+    #print(data['timepoint'])
+    #handle, = ax.plot(data['timepoint'], data['expected'][:], **sk)
+    #sk['alpha'] = .3
+    #ax.fill_between(data['timepoint'], data['ci_ubound'][:], data['ci_lbound'][:], **sk)
+    return handle
+
+def bar_color(ax, data, irange, index, sk):
+    print(data['efficiency_Color vs. Non Color'])
+    point = data['efficiency_Color vs. Non Color'].shape[0]-1
+    if int(index) == 1:
+        ax.axhline(y=1,color='black', alpha=.3, lw=.5)
+    #sk['log'] = True
+    handle, = ax.bar(int(index), data['efficiency_Color vs. Non Color'][:][point], **sk)
     # I used timepoint in the dataframe.
     #print(data['timepoint'])
     #handle, = ax.plot(data['timepoint'], data['expected'][:], **sk)
