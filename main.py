@@ -82,7 +82,8 @@ class App(QMainWindow):
         self.updateFromDict(True, firstrun=True)
         self.dataLoader = dataLoader(self, [])
         self.dc = mplCanvas(self.main_widget, data_parent=self, width=10, height=8, dpi=100, data=self.dataLoader.dataStructure, notify_func=self.notify)
-        self.save_button = newButton(self, "Save", "Saves the Figure", (250,self.height-30), self.save_figure, click_args=None)
+        self.save_button = newButton(self, "Save", "Saves the YAML", (250,self.height-30), self.save_yaml, click_args=None)
+        self.render_button = newButton(self, "Render!", "Renders the PDF", (250,self.height-30), self.save_figure, click_args=None)
         self.load_button = newButton(self, "Load Yaml", "Loads the Config", (250,self.height-30), self.dataLoader.loadNewYaml, click_args=None)
         self.text = newTextBox(self, size=(0,30), pos=(self.save_button.button.width()+250, self.height-30), init_text="Welcome!")
         self.text.textBox.setGeometry(self.save_button.button.width()+self.load_button.button.width(), self.height-30, self.width-self.save_button.button.width(), 15)
@@ -154,6 +155,7 @@ class App(QMainWindow):
         self.blayout = QHBoxLayout(self.textdock)
         self.blayout.addWidget(self.text.textBox)
         self.blayout.addWidget(self.save_button.button)
+        self.blayout.addWidget(self.render_button.button)
         self.blayout.addWidget(self.load_button.button)
         #self.blayout.addWidget(self.toolbar)
         #self.bwidget.setMinimumHeight((self.width-self.save_button.button.width(), 30))
@@ -218,12 +220,19 @@ class App(QMainWindow):
         self.mplTree.removeItem(self.mplTree.tree.selectedItems()[0])
 
     def save_figure(self):
-        filename, _ = QFileDialog.getSaveFileName(self, 'Save YAML/PDF', os.getcwd())
+        filename, _ = QFileDialog.getSaveFileName(self, 'Save PDF', os.getcwd())
         if filename != '':
-            self.dc.fig.savefig(filename + ".pdf")
+            self.mpl_dict['Active'] = None
+            self.dc.update_figure()
+            self.dc.update_figure()
+            self.dc.fig.savefig(filename)
+
+    def save_yaml(self):
+        filename, _ = QFileDialog.getSaveFileName(self, 'Save YAML', os.getcwd())
+        if filename != '':
             save_dict = remove_trees(self.mpl_dict)
             save_dict['FilesToLoad'] = ast.literal_eval(save_dict['FilesToLoad'])
-            with open(filename + '.yml', 'w') as outfile:
+            with open(filename, 'w') as outfile:
                 yaml.dump(save_dict, outfile, default_flow_style=False)
 
 

@@ -352,7 +352,7 @@ class mplCanvas(FigureCanvas):
                         #    ax.spines[p].set_visible(False)
                     if 'despine' in fk:
                         ax.spines['top'].set_visible(False)
-                        ax.spines['true'].set_visible(False)
+                        ax.spines['right'].set_visible(False)
             # Update which dset is active.
             if self.parent.mpl_dict['Active'] is not None:
                 self.setOpenDSet(self.parent.mpl_dict['Active'])
