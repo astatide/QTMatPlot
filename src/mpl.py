@@ -125,9 +125,15 @@ class mplCanvas(FigureCanvas):
                 pass
             else:
                 sk['color'] = str(self.parent.mpl_dict['Colors'][int(sk['color'])])
+            # Start the stupid exception handling.
+            if 'lw' in sk:
+                sk['lw'] = float(sk['lw'])
             loc = copy.deepcopy(sk['loc'])
             irange = copy.deepcopy(sk['range'])
-            orange = None
+            if 'index' in sk:
+                orange = sk['index']
+            else:
+                orange = None
             plotfuncstr = fk['type'].split('.')
             module = __import__(plotfuncstr[0])
             plotfunc = getattr(module, plotfuncstr[1])
@@ -147,8 +153,8 @@ class mplCanvas(FigureCanvas):
     def updateFromDict(self):
         d = self.parent.mpl_dict
         # Clears the figure before we plot more.
-        #try:
-        if True:
+        try:
+        #if True:
             if self.parent.mpl_dict['Update'] == True:
                 # This means that we're updating from the defaults.
                 self.fig.clear()
@@ -236,6 +242,9 @@ class mplCanvas(FigureCanvas):
                             del tp['axis']
                             if 'length' in tp:
                                 tp['length'] = int(tp['length'])
+                            if 'pad' in tp:
+                                # It seems some of these are very explicit about types.
+                                tp['pad'] = float(tp['pad'])
                             if i == 'x':
                                 ax.xaxis.set_tick_params(**tp)
                             elif i == 'y':
@@ -319,19 +328,27 @@ class mplCanvas(FigureCanvas):
                         # Makes sense.
                         yticklabels = ast.literal_eval(fk['yticklabels'])
                         ax.set_yticklabels(yticklabels)
+                    # Set the spines and all that.
+                    if 'spines_lw' in fk:
+                        if fk['spines_lw'] != '':
+                            for p in ['top', 'right', 'bottom', 'left']:
+                                ax.spines[p].set_linewidth(fk['spines_lw'])
+                    for p in ['top', 'right', 'bottom', 'left']:
+                        if 'spines_{}_visible'.format(p) in fk:
+                            ax.spines[p].set_visible(False)
             # Update which dset is active.
             if self.parent.mpl_dict['Active'] is not None:
                 self.setOpenDSet(self.parent.mpl_dict['Active'])
             self.plotLegend()
                 #if plotted:
                 #    self.fig.tight_layout()
-        '''except Exception as e:
+        except Exception as e:
             tb = traceback.format_exc()
             if self.notify_func is not None:
                 self.notify_func(tb)
                 return None
             else:
-                return None'''
+                return None
 
     def plotLegend(self):
         new_handles = []
@@ -420,9 +437,16 @@ class mplCanvas(FigureCanvas):
         pass
 
     def update_figure(self, defaults=True):
-        self.updateFromDict()
+        try:
+            self.updateFromDict()
+            self.draw()
+        except Exception as e:
+            tb = traceback.format_exc()
+            if self.notify_func is not None:
+                self.notify_func(tb)
+            else:
+                pass
         #FigureCanvas.updateGeometry(self)
-        self.draw()
 
     def translate_location(self, location):
         loc = self.data

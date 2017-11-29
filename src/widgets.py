@@ -309,7 +309,12 @@ class newTree():
         # Now, we delete both the item, and the key.
         # oldValue is something I've appended to the QTreeWidgetItem to keep
         # track of things in the dictionary.  We lose that after we change things.
-        del dictItem[item.oldValue[0]]
+        integ = False
+        try:
+            del dictItem[item.oldValue[0]]
+        except:
+            integ = True
+            del dictItem[int(item.oldValue[0])]
 
         # Now we try deleting the widget.  We rely on our main function to recreate
         # QTreeWidgetItems as necessary; it's only necessary that we remove it.
@@ -331,7 +336,10 @@ class newTree():
         # Once we call the update function, it'll regenerate the QTreeWidgetItem
         # This doesn't seem to work for things in the top level?
         #if len(keys) > 1:
-        dictItem[item.data(0,0)] = item.data(1,0)
+        if integ:
+            dictItem[int(item.data(0,0))] = item.data(1,0)
+        else:
+            dictItem[item.data(0,0)] = item.data(1,0)
         #else:
         #    self.parent.mpl_dict[item.data(0,0)] = item.data(1,0)
         item.oldValue = [item.data(0,0), item.data(1,0)]

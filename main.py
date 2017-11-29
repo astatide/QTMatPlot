@@ -222,6 +222,7 @@ class App(QMainWindow):
         if filename != '':
             self.dc.fig.savefig(filename + ".pdf")
             save_dict = remove_trees(self.mpl_dict)
+            save_dict['FilesToLoad'] = ast.literal_eval(save_dict['FilesToLoad'])
             with open(filename + '.yml', 'w') as outfile:
                 yaml.dump(save_dict, outfile, default_flow_style=False)
 
@@ -232,14 +233,14 @@ class App(QMainWindow):
         # We want to push a lot of this to later.
         self.mpl_dict.update(copy.deepcopy(test))
         self.mpl_dict['Update'] = True
-        print(ast.literal_eval(self.mpl_dict['FilesToLoad']))
-        for f in ast.literal_eval(self.mpl_dict['FilesToLoad']):
+        #print(ast.literal_eval(self.mpl_dict['FilesToLoad']))
+        for f in self.mpl_dict['FilesToLoad']:
             print(f)
             try:
                 # Does seem to work.
                 self.loadNewFile(f)
                 # Remove the item, as it automatically loads it right now.
-                self.mpl_dict['FilesToLoad'] = self.mpl_dict['FilesToLoad'][:-1]
+                self.mpl_dict['FilesToLoad'] = self.mpl_dict['FilesToLoad']
             except:
                 # We failed.
                 pass
