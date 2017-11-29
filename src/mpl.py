@@ -347,9 +347,12 @@ class mplCanvas(FigureCanvas):
                         if fk['spines_lw'] != '':
                             for p in ['top', 'right', 'bottom', 'left']:
                                 ax.spines[p].set_linewidth(fk['spines_lw'])
-                    for p in ['top', 'right', 'bottom', 'left']:
-                        if 'spines_{}_visible'.format(p) in fk:
-                            ax.spines[p].set_visible(False)
+                    #for p in ['top', 'right', 'bottom', 'left']:
+                        #if 'spines_{}_visible'.format(p) in fk:
+                        #    ax.spines[p].set_visible(False)
+                    if 'despine'.format(p) in fk:
+                        ax.spines['top'].set_visible(False)
+                        ax.spines['true'].set_visible(False)
             # Update which dset is active.
             if self.parent.mpl_dict['Active'] is not None:
                 self.setOpenDSet(self.parent.mpl_dict['Active'])
