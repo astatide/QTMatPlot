@@ -47,6 +47,8 @@ def shade(ax, data, irange, index, sk):
 def bar_bf(ax, data, irange, index, sk):
     print(data['efficiency_BF'])
     point = data['efficiency_BF'].shape[0]-1
+    if int(index) == 1:
+        ax.axhline(y=1,color='black', alpha=.3, lw=.5)
     #sk['log'] = True
     handle, = ax.bar(int(index), data['efficiency_BF'][:][point], **sk)
     # I used timepoint in the dataframe.
