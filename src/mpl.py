@@ -350,7 +350,7 @@ class mplCanvas(FigureCanvas):
                     #for p in ['top', 'right', 'bottom', 'left']:
                         #if 'spines_{}_visible'.format(p) in fk:
                         #    ax.spines[p].set_visible(False)
-                    if 'despine'.format(p) in fk:
+                    if 'despine' in fk:
                         ax.spines['top'].set_visible(False)
                         ax.spines['true'].set_visible(False)
             # Update which dset is active.
