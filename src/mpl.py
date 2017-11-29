@@ -267,7 +267,7 @@ class mplCanvas(FigureCanvas):
                         for k,v in self.parent.mpl_dict['Fonts']['Labels'].items():
                             if v != '':
                                 prop[k] = copy.copy(v)
-                        ax.set_ylabel(fk['ylabel'], fontdict=prop)
+                        ax.set_ylabel('{}'.format(str(fk['ylabel'].replace(r'\n', '\n'))), fontdict=prop)
                     if fk['xlabel'] is not None:
                         prop = copy.deepcopy(self.parent.mpl_dict['Fonts']['Default'])
                         for k,v in self.parent.mpl_dict['Fonts']['Labels'].items():
