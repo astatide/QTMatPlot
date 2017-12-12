@@ -256,6 +256,32 @@ class mplCanvas(FigureCanvas):
                                 ax.yaxis.set_tick_params(**tp)
                     sk = dict(self.parent.mpl_dict['DSetDefaults'])
                     fk = dict(self.parent.mpl_dict['FigDefaults'])
+                    # We'd like to add in the ability to do annotations, if at all possible.  That should be handled here, really.
+                    # It should really be in the FigDefaults, section, but just... blank.
+                    # Ugh ugh ugh.
+                    if 'annotation' in pd:
+                        # WHEEEEEEE
+                        ak = copy.deepcopy(pd['annotation'])
+                        # Let's pull in the annotation kwargs.  Wait, we already did.  Okay, let's use it, now.
+                        if ak['ENABLE']:
+                            # Hacky; do this up later.
+                            del ak['ENABLE']
+                            if 'xy' in ak:
+                                ak['xy'] = ast.literal_eval(ak['xy'])
+                            # I don't remember what this is, right now, but this should help improve it, anyway.
+                            ak['s'] = '{}'.format(str(ak['s'].replace(r'\n', '\n')))
+                            prop = copy.deepcopy(self.parent.mpl_dict['Fonts']['Default'])
+                            for k,v in self.parent.mpl_dict['Fonts']['Ticks'].items():
+                                if v != '':
+                                    prop[k] = copy.copy(v)
+                            fontprop = matplotlib.font_manager.FontProperties()
+                            fontprop.set_family(prop['family'])
+                            fontprop.set_weight(prop['weight'])
+                            fontprop.set_size(prop['size'])
+                            ak['fontproperties'] = fontprop
+                            self.axes[rows,cols].annotate(**ak)
+                            ak['ENABLE'] = True
+                        # Whee, I guess.
                     for k, v in pd.items():
                         if k != "data":
                             if v is not None and v != "None" and v != '':

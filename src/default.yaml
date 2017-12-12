@@ -34,6 +34,13 @@ FigDefaults:
   xticklabels: ''
   yticks: ''
   yticklabels: ''
+  annotation:
+    ENABLE: False
+    s: ''
+    xy: (0,-.23)
+    xycoords: 'axes fraction'
+    textcoords: 'axes fraction'
+    ha: 'right'
   x_major_tick_params:
     axis: 'x'
     which: 'major'
