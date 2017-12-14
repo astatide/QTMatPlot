@@ -69,6 +69,7 @@ class dataLoader():
                 self.dataStructure[filename] = newFile
             else:
                 pass
+        print("LOADING DONE")
 
     def loadNewYaml(self):
         filename, _ = QFileDialog.getOpenFileName(self.parent, 'Open Yaml File', os.getcwd())

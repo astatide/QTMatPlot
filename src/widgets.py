@@ -7,6 +7,7 @@ from PyQt5.QtGui import QIcon, QCursor
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.Qt import Qt
+from collections import OrderedDict
 
 # Matplotlib stuff
 import matplotlib as mpl
@@ -169,18 +170,23 @@ class newTree():
         # We can actually have numerous structures, here.
         # Why not keep track of it, for now?
         # We want to do a reverse lookup
-        ddc = copy.copy(dict_data)
+        #ddc = copy.copy(dict_data)
+        #ddc = dict_data
         con = False
         oldKeyTree = None
-        from collections import OrderedDict
         #for key, val in sorted(ddc.items(), key= lambda x: str(x)):
         od = {}
+        # This sped it up quite a bit.
         try:
-            od = OrderedDict(sorted(ddc.items(), key= lambda i: self.parent.mpl_dict['keyOrder'].index(i[0])))
+            #od = OrderedDict(sorted(ddc.items(), key= lambda i: self.parent.mpl_dict['keyOrder'].index(i[0])))
+            #od = OrderedDict(sorted(ddc.items(), key= lambda i: self.parent.mpl_dict['keyOrder'].index(i[0])))
+            od_keys = sorted(dict_data.keys(), key = lambda i: self.parent.mpl_dict['keyOrder'].index(i[0]))
         except:
             # Default to alphabetical order
-            od = OrderedDict(sorted(ddc.items(), key= lambda x: str(x)))
-        for key, val in od.items():
+            #od = OrderedDict(sorted(ddc.items(), key= lambda x: str(x)))
+            od_keys = sorted(dict_data.keys(), key = lambda x: str(x))
+        for key in od_keys:
+            val = dict_data[key]
             if type(key) == str and len(key) >= 6:
                 #if key[0:7] != 'keyTree' and key[0:7] != 'valTree':
                 if key not in self.parent.mpl_dict['hidden_keys']:

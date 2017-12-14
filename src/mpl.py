@@ -186,7 +186,9 @@ class mplCanvas(FigureCanvas):
                     #for k in ['left', 'right']
                 self.axes = self.fig.subplots(nrows=int(d['Rows']), ncols=int(d['Columns']), gridspec_kw=gridspec_kw, **subplot_kw)
                 if int(d['Rows']) == 1:
-                    self.axes = self.axes[np.newaxis,:]
+                    #self.axes = self.axes[np.newaxis,:]
+                    self.axes = np.expand_dims(self.axes, axis=0)
+                    #np.append(self.axes, values=self.axes[0,:], axis=1)
                 if int(d['Columns']) == 1:
                     self.axes = self.axes[:,np.newaxis]
                 self.al = {}
